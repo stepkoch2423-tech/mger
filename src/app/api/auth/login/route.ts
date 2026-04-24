@@ -1,10 +1,15 @@
 import { compare } from "bcryptjs";
 import { NextResponse } from "next/server";
 import { applySessionCookie, createSession } from "@/lib/auth/session";
+import { READ_ONLY_DEPLOYMENT_MESSAGE, isReadOnlyDeployment } from "@/lib/deployment";
 import { prisma } from "@/lib/prisma";
 import { loginSchema } from "@/lib/validators";
 
 export async function POST(request: Request) {
+  if (isReadOnlyDeployment()) {
+    return NextResponse.json({ error: READ_ONLY_DEPLOYMENT_MESSAGE }, { status: 503 });
+  }
+
   try {
     const body = await request.json();
     const parsed = loginSchema.safeParse(body);

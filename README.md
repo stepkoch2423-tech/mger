@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MGER Board
 
-## Getting Started
+Доска мероприятий для "Молодой гвардии" на `Next.js 16`, `React 19`, `Prisma 7` и `SQLite`.
 
-First, run the development server:
+Приложение показывает календарь мероприятий, карточки событий, роли участников штаба и отметки участия. Локально проект работает с seeded SQLite-базой, а публичный Vercel deployment сейчас переведён в режим просмотра, чтобы сайт стабильно открывался без внешней БД и файлового хранилища.
+
+## Стек
+
+- `Next.js 16`
+- `React 19`
+- `Prisma 7`
+- `better-sqlite3`
+- `Tailwind CSS 4`
+
+## Локальный запуск
 
 ```bash
+npm install
+npm run prisma:generate
+npm run setup
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Если база уже создана, достаточно:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run prisma:generate
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Прод-сборка:
 
-## Learn More
+```bash
+npm run build
+npm run start
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Тестовые аккаунты
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Владелец: `owner@mger.local` / `molodaya2026`
+- Модератор: `moderator@mger.local` / `moderator2026`
+- Активист: `aktivist@mger.local` / `aktivist2026`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Важные замечания
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Основная локальная база находится в `dev.db`.
+- Файлы `dev.db-shm`, `dev.db-wal` и папка `output/` не должны попадать в git.
+- Для публичного Vercel deployment база автоматически подключается как traced asset, а mutating API-роуты отключены и возвращают режим read-only.
+- Чтобы включить полноценный вход, загрузки и редактирование в проде, нужно вынести данные и файлы во внешние managed-сервисы.

@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
+import { READ_ONLY_DEPLOYMENT_MESSAGE, isReadOnlyDeployment } from "@/lib/deployment";
 import { canManageEvents } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { eventSchema } from "@/lib/validators";
 
 export async function POST(request: Request) {
+  if (isReadOnlyDeployment()) {
+    return NextResponse.json({ error: READ_ONLY_DEPLOYMENT_MESSAGE }, { status: 503 });
+  }
+
   const currentUser = await getCurrentUser();
 
   if (!canManageEvents(currentUser?.role)) {

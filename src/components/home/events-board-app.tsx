@@ -1,7 +1,6 @@
 "use client";
 
 import { type FormEvent, useDeferredValue, useState, useTransition } from "react";
-import { RSVPStatus, Role } from "@prisma/client";
 import { format, startOfMonth } from "date-fns";
 import { ru } from "date-fns/locale";
 import Image from "next/image";
@@ -29,6 +28,7 @@ import {
 import type { SessionUser } from "@/lib/auth/session";
 import { canManageEvents, canManageMembers } from "@/lib/permissions";
 import type { BoardEvent, BoardPayload } from "@/lib/dashboard";
+import { ROLE, RSVP_STATUS, type AppRsvpStatus } from "@/lib/domain-constants";
 import { cn, formatRussianPlural, toDateKey } from "@/lib/utils";
 import { CalendarBoard } from "@/components/home/calendar-board";
 import { EventDetailPanel } from "@/components/home/event-detail-panel";
@@ -213,7 +213,7 @@ export function EventsBoardApp({
     refreshBoard();
   }
 
-  async function handleRsvp(eventId: string, status: RSVPStatus) {
+  async function handleRsvp(eventId: string, status: AppRsvpStatus) {
     if (!currentUser) {
       setAuthMode("login");
       setAuthOpen(true);
@@ -244,7 +244,7 @@ export function EventsBoardApp({
       setFlash({
         type: "success",
         text:
-          status === RSVPStatus.GOING
+          status === RSVP_STATUS.GOING
             ? "Отметка «Я приду» сохранена."
             : "Отметка «Не смогу» сохранена.",
       });
@@ -279,7 +279,7 @@ export function EventsBoardApp({
       setFlash({
         type: "success",
         text:
-          role === Role.MODERATOR
+          role === ROLE.MODERATOR
             ? "Пользователь назначен модератором."
             : "Пользователь переведён в активисты.",
       });
@@ -794,9 +794,9 @@ export function EventsBoardApp({
 
                 <div className="mt-4 space-y-3">
                   {filteredMembers.map((member) => {
-                    const isOwner = member.role === Role.OWNER;
+                    const isOwner = member.role === ROLE.OWNER;
                     const nextRole =
-                      member.role === Role.MODERATOR ? Role.ACTIVIST : Role.MODERATOR;
+                      member.role === ROLE.MODERATOR ? ROLE.ACTIVIST : ROLE.MODERATOR;
 
                     return (
                       <div
@@ -809,9 +809,9 @@ export function EventsBoardApp({
                             <span
                               className={cn(
                                 "rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em]",
-                                member.role === Role.OWNER
+                                member.role === ROLE.OWNER
                                   ? "bg-[#214aa8]/24 text-[#cedcff]"
-                                  : member.role === Role.MODERATOR
+                                  : member.role === ROLE.MODERATOR
                                     ? "bg-amber-500/16 text-amber-200"
                                     : "bg-white/[0.06] text-[#b6c9ef]",
                               )}
@@ -848,7 +848,7 @@ export function EventsBoardApp({
                               className="inline-flex items-center gap-2 rounded-full bg-[#214aa8] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#2d58bf] disabled:cursor-wait disabled:opacity-70"
                             >
                               <ShieldCheck className="h-4 w-4" />
-                              {nextRole === Role.MODERATOR
+                              {nextRole === ROLE.MODERATOR
                                 ? "Сделать модератором"
                                 : "Вернуть в активисты"}
                             </button>
@@ -1551,7 +1551,7 @@ function EventEditorDialog({
 }
 
 const roleLabel = {
-  [Role.OWNER]: "Владелец",
-  [Role.MODERATOR]: "Модератор",
-  [Role.ACTIVIST]: "Активист",
+  [ROLE.OWNER]: "Владелец",
+  [ROLE.MODERATOR]: "Модератор",
+  [ROLE.ACTIVIST]: "Активист",
 } as const;

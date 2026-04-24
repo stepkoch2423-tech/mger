@@ -16,7 +16,7 @@ const db = new DatabaseSync(databasePath);
 
 db.exec(`
   PRAGMA foreign_keys = ON;
-  PRAGMA journal_mode = WAL;
+  PRAGMA journal_mode = DELETE;
 
   CREATE TABLE IF NOT EXISTS "User" (
     "id" TEXT NOT NULL PRIMARY KEY,

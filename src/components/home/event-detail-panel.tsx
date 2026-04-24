@@ -1,7 +1,6 @@
 "use client";
 
 import { type ComponentType, useState } from "react";
-import { RSVPStatus } from "@prisma/client";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import Image from "next/image";
@@ -17,6 +16,7 @@ import {
 } from "lucide-react";
 import type { SessionUser } from "@/lib/auth/session";
 import type { BoardEvent } from "@/lib/dashboard";
+import { RSVP_STATUS, type AppRsvpStatus } from "@/lib/domain-constants";
 import { cn, formatEventDateRange, formatRussianPlural } from "@/lib/utils";
 
 const roleLabel = {
@@ -36,7 +36,7 @@ type EventDetailPanelProps = {
   onOpenCreate: (dateKey: string) => void;
   onOpenEdit: (event: BoardEvent) => void;
   onRequireAuth: () => void;
-  onSetResponse: (eventId: string, status: RSVPStatus) => void;
+  onSetResponse: (eventId: string, status: AppRsvpStatus) => void;
 };
 
 export function EventDetailPanel({
@@ -230,9 +230,9 @@ export function EventDetailPanel({
               </p>
               <h4 className="mt-2 text-lg font-semibold text-white">
                 {currentUser
-                  ? activeEvent.currentUserResponse === RSVPStatus.GOING
+                  ? activeEvent.currentUserResponse === RSVP_STATUS.GOING
                     ? "Вы отметили участие"
-                    : activeEvent.currentUserResponse === RSVPStatus.DECLINED
+                    : activeEvent.currentUserResponse === RSVP_STATUS.DECLINED
                       ? "Вы отметили, что не сможете"
                       : "Отметьте участие, чтобы штаб видел отклик"
                   : "Войдите, чтобы отметить участие"}
@@ -248,13 +248,13 @@ export function EventDetailPanel({
               type="button"
               onClick={() =>
                 currentUser
-                  ? onSetResponse(activeEvent.id, RSVPStatus.GOING)
+                  ? onSetResponse(activeEvent.id, RSVP_STATUS.GOING)
                   : onRequireAuth()
               }
               disabled={rsvpPendingId === activeEvent.id}
               className={cn(
                 "rounded-[1.2rem] border px-4 py-3 text-left transition",
-                activeEvent.currentUserResponse === RSVPStatus.GOING
+                activeEvent.currentUserResponse === RSVP_STATUS.GOING
                   ? "border-emerald-400/40 bg-emerald-500/12"
                   : "border-white/8 bg-white/[0.03] hover:border-emerald-400/30 hover:bg-emerald-500/8",
               )}
@@ -271,13 +271,13 @@ export function EventDetailPanel({
               type="button"
               onClick={() =>
                 currentUser
-                  ? onSetResponse(activeEvent.id, RSVPStatus.DECLINED)
+                  ? onSetResponse(activeEvent.id, RSVP_STATUS.DECLINED)
                   : onRequireAuth()
               }
               disabled={rsvpPendingId === activeEvent.id}
               className={cn(
                 "rounded-[1.2rem] border px-4 py-3 text-left transition",
-                activeEvent.currentUserResponse === RSVPStatus.DECLINED
+                activeEvent.currentUserResponse === RSVP_STATUS.DECLINED
                   ? "border-rose-400/40 bg-rose-500/12"
                   : "border-white/8 bg-white/[0.03] hover:border-rose-400/30 hover:bg-rose-500/8",
               )}
@@ -350,12 +350,12 @@ export function EventDetailPanel({
                     <span
                       className={cn(
                         "rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em]",
-                        attendee.status === RSVPStatus.GOING
+                        attendee.status === RSVP_STATUS.GOING
                           ? "bg-emerald-500/12 text-emerald-300"
                           : "bg-rose-500/12 text-rose-300",
                       )}
                     >
-                      {attendee.status === RSVPStatus.GOING ? "Придёт" : "Не сможет"}
+                      {attendee.status === RSVP_STATUS.GOING ? "Придёт" : "Не сможет"}
                     </span>
                   </div>
                 ))
