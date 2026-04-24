@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum Role {
+  OWNER
+  MODERATOR
+  ACTIVIST
+}
+
+enum RSVPStatus {
+  GOING
+  DECLINED
+}
+
+model User {
+  id            String          @id @default(cuid())
+  name          String
+  email         String          @unique
+  passwordHash  String
+  role          Role            @default(ACTIVIST)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  sessions      Session[]
+  createdEvents Event[]         @relation("EventCreator")
+  responses     EventResponse[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@index([userId])
+}
+
+model Event {
+  id            String          @id @default(cuid())
+  title         String
+  summary       String
+  description   String
+  location      String
+  category      String
+  organizerName String
+  startAt       DateTime
+  endAt         DateTime
+  capacity      Int?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  createdById   String
+  createdBy     User            @relation("EventCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  photos        EventPhoto[]
+  responses     EventResponse[]
+
+  @@index([createdById])
+  @@index([startAt])
+}
+
+model EventPhoto {
+  id        String @id @default(cuid())
+  url       String
+  alt       String?
+  sortOrder Int    @default(0)
+  eventId   String
+  event     Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, sortOrder])
+}
+
+model EventResponse {
+  id        String     @id @default(cuid())
+  status    RSVPStatus
+  note      String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  eventId   String
+  userId    String
+  event     Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId, status])
+  @@index([userId])
+}

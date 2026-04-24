@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+:root {
+  --background: #07111f;
+  --foreground: #f4f8ff;
+  --muted-foreground: #91a4c8;
+  --mger-red: #ea2334;
+  --mger-blue: #214aa8;
+  --mger-silver: #d7deec;
+  --surface-base: rgba(10, 20, 36, 0.88);
+  --surface-elevated: rgba(14, 27, 47, 0.94);
+  --surface-soft: rgba(255, 255, 255, 0.04);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --border-soft: rgba(255, 255, 255, 0.08);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-manrope);
+  --font-display: var(--font-display);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--background);
+  color: var(--foreground);
+  color-scheme: dark;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(33, 74, 168, 0.22), transparent 28%),
+    radial-gradient(circle at top right, rgba(234, 35, 52, 0.18), transparent 26%),
+    linear-gradient(180deg, #07111f 0%, #091523 38%, #0b1628 100%);
+  color: var(--foreground);
+  font-family: var(--font-manrope), sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+}
+
+input,
+textarea,
+select,
+button {
+  font: inherit;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--mger-red) 38%, transparent);
+  color: white;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(145, 164, 200, 0.35);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.font-display {
+  font-family: var(--font-display), sans-serif;
+}
+
+.panel-surface {
+  backdrop-filter: blur(22px);
+}
+
+.line-clamp-1,
+.line-clamp-2,
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-1 {
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  -webkit-line-clamp: 3;
+}
