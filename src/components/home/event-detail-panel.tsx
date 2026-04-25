@@ -59,21 +59,21 @@ export function EventDetailPanel({
 
   if (!events.length) {
     return (
-      <aside className="panel-surface rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(11,21,38,0.96),rgba(8,16,30,0.96))] p-5 shadow-[0_24px_70px_rgba(0,0,0,0.28)]">
-        <div className="rounded-[1.7rem] border border-dashed border-white/10 bg-white/[0.03] p-5">
+      <aside className="panel-surface surface-panel rounded-[1.8rem] p-5">
+        <div className="rounded-[1.45rem] border border-dashed border-white/10 bg-white/[0.02] p-5">
           <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[#8397bf]">
             Детали дня
           </p>
-          <h3 className="mt-3 font-display text-3xl uppercase tracking-tight text-white">
+          <h3 className="mt-3 font-display text-[2.35rem] uppercase tracking-tight text-white">
             На эту дату событий нет
           </h3>
           <p className="mt-3 text-sm leading-6 text-[#93a6cb]">
             Выберите другое число или создайте новое мероприятие для выбранного дня.
           </p>
 
-          <div className="mt-5 rounded-[1.4rem] border border-white/8 bg-white/[0.03] p-4">
-            <div className="flex items-start gap-3">
-              <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#1a356f] text-white">
+          <div className="mt-5 rounded-[1.2rem] border border-white/8 bg-white/[0.03] p-4">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-[1rem] bg-[#1a356f] text-white">
                 <CalendarDays className="h-5 w-5" />
               </span>
               <div className="min-w-0">
@@ -115,9 +115,9 @@ export function EventDetailPanel({
       : Math.max(activeEvent.capacity - activeEvent.attendeeStats.going, 0);
 
   return (
-    <aside className="panel-surface overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(11,21,38,0.98),rgba(8,16,29,0.98))] shadow-[0_24px_70px_rgba(0,0,0,0.28)]">
-      <div className="border-b border-white/8 p-4">
-        <div className="flex flex-wrap gap-2">
+    <aside className="panel-surface surface-panel overflow-hidden rounded-[1.8rem]">
+      <div className="overflow-x-auto border-b border-white/8 px-4 py-4">
+        <div className="flex min-w-max gap-2">
           {events.map((event) => (
             <button
               key={event.id}
@@ -136,13 +136,13 @@ export function EventDetailPanel({
         </div>
       </div>
 
-      <div className="space-y-4 p-4">
-        <div className="flex items-start justify-between gap-3">
+      <div className="space-y-5 p-4 sm:p-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <span className="inline-flex rounded-full border border-[#4d6fd8]/30 bg-[#27439b]/20 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#9bb3ff]">
               {activeEvent.category}
             </span>
-            <h3 className="mt-3 font-display text-3xl uppercase leading-[0.92] tracking-tight text-white">
+            <h3 className="mt-3 font-display text-[2.35rem] uppercase leading-[0.92] tracking-tight text-white">
               {activeEvent.title}
             </h3>
             <p className="mt-2 text-sm leading-6 text-[#93a7cb]">{activeEvent.summary}</p>
@@ -160,8 +160,8 @@ export function EventDetailPanel({
           ) : null}
         </div>
 
-        <div className="relative overflow-hidden rounded-[1.7rem] border border-white/8 bg-[#0b1628]">
-          <div className="relative aspect-[1.22/0.9]">
+        <div className="relative overflow-hidden rounded-[1.4rem] border border-white/8 bg-[#0b1628]">
+          <div className="relative aspect-[1.24/0.92]">
             {photo ? (
               <Image
                 src={photo.url}
@@ -215,14 +215,14 @@ export function EventDetailPanel({
           </div>
         ) : null}
 
-        <div className="grid gap-2 sm:grid-cols-2">
-          <InfoTile icon={CalendarDays} label="Дата" value={range.day} />
-          <InfoTile icon={Clock3} label="Время" value={range.time} />
-          <InfoTile icon={MapPin} label="Локация" value={activeEvent.location} />
-          <InfoTile icon={UserRoundCheck} label="Организатор" value={activeEvent.organizerName} />
+        <div className="overflow-hidden rounded-[1.25rem] border border-white/8 bg-white/[0.025]">
+          <InfoRow icon={CalendarDays} label="Дата" value={range.day} />
+          <InfoRow icon={Clock3} label="Время" value={range.time} />
+          <InfoRow icon={MapPin} label="Локация" value={activeEvent.location} />
+          <InfoRow icon={UserRoundCheck} label="Организатор" value={activeEvent.organizerName} />
         </div>
 
-        <div className="rounded-[1.6rem] border border-white/8 bg-white/[0.03] p-4">
+        <div className="rounded-[1.35rem] border border-white/8 bg-white/[0.03] p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#8094bb]">
@@ -253,7 +253,7 @@ export function EventDetailPanel({
               }
               disabled={rsvpPendingId === activeEvent.id}
               className={cn(
-                "rounded-[1.2rem] border px-4 py-3 text-left transition",
+                "rounded-[1.05rem] border px-4 py-3 text-left transition",
                 activeEvent.currentUserResponse === RSVP_STATUS.GOING
                   ? "border-emerald-400/40 bg-emerald-500/12"
                   : "border-white/8 bg-white/[0.03] hover:border-emerald-400/30 hover:bg-emerald-500/8",
@@ -276,7 +276,7 @@ export function EventDetailPanel({
               }
               disabled={rsvpPendingId === activeEvent.id}
               className={cn(
-                "rounded-[1.2rem] border px-4 py-3 text-left transition",
+                "rounded-[1.05rem] border px-4 py-3 text-left transition",
                 activeEvent.currentUserResponse === RSVP_STATUS.DECLINED
                   ? "border-rose-400/40 bg-rose-500/12"
                   : "border-white/8 bg-white/[0.03] hover:border-rose-400/30 hover:bg-rose-500/8",
@@ -293,7 +293,7 @@ export function EventDetailPanel({
         </div>
 
         <div className="grid gap-2 sm:grid-cols-3">
-          <InfoTile
+          <DetailStat
             icon={Users}
             label="Придут"
             value={formatRussianPlural(activeEvent.attendeeStats.going, [
@@ -302,7 +302,7 @@ export function EventDetailPanel({
               "человек",
             ])}
           />
-          <InfoTile
+          <DetailStat
             icon={Ticket}
             label="Не смогут"
             value={formatRussianPlural(activeEvent.attendeeStats.declined, [
@@ -311,7 +311,7 @@ export function EventDetailPanel({
               "человек",
             ])}
           />
-          <InfoTile
+          <DetailStat
             icon={ShieldCheck}
             label="Свободно мест"
             value={seatsLeft === null ? "Без лимита" : `${seatsLeft}`}
@@ -319,7 +319,7 @@ export function EventDetailPanel({
         </div>
 
         {canManageEvents ? (
-          <div className="rounded-[1.6rem] border border-white/8 bg-white/[0.03] p-4">
+          <div className="rounded-[1.35rem] border border-white/8 bg-white/[0.03] p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#8094bb]">
@@ -339,7 +339,7 @@ export function EventDetailPanel({
                 activeEvent.attendees.map((attendee) => (
                   <div
                     key={attendee.id}
-                    className="flex items-center justify-between gap-3 rounded-[1.2rem] border border-white/8 bg-[#0c1729] px-4 py-3"
+                    className="flex flex-col gap-2 rounded-[1.05rem] border border-white/8 bg-[#0c1729] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="min-w-0">
                       <p className="truncate font-semibold text-white">{attendee.name}</p>
@@ -378,11 +378,29 @@ type InfoTileProps = {
   value: string;
 };
 
-function InfoTile({ icon: Icon, label, value }: InfoTileProps) {
+function InfoRow({ icon: Icon, label, value }: InfoTileProps) {
   return (
-    <div className="rounded-[1.25rem] border border-white/8 bg-white/[0.03] px-4 py-3">
-      <div className="flex items-start gap-3">
-        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/[0.06] text-[#9eb3da]">
+    <div className="flex items-center gap-3 border-b border-white/8 px-4 py-3 last:border-b-0">
+      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[1rem] bg-white/[0.06] text-[#9eb3da]">
+        <Icon className="h-5 w-5" />
+      </span>
+      <div className="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between sm:gap-4">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#7f93b7]">
+          {label}
+        </p>
+        <p className="mt-1 break-words text-sm font-semibold text-white sm:mt-0 sm:text-right">
+          {value}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function DetailStat({ icon: Icon, label, value }: InfoTileProps) {
+  return (
+    <div className="rounded-[1.05rem] border border-white/8 bg-white/[0.025] px-4 py-3">
+      <div className="flex items-center gap-3">
+        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[0.95rem] bg-white/[0.06] text-[#9eb3da]">
           <Icon className="h-5 w-5" />
         </span>
         <div className="min-w-0">

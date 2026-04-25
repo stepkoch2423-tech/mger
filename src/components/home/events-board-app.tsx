@@ -171,6 +171,10 @@ export function EventsBoardApp({
   }
 
   function openCreateForDate(dateKey: string) {
+    const nextDate = new Date(`${dateKey}T12:00:00`);
+    setSelectedMonth(startOfMonth(nextDate));
+    setSelectedDateKey(dateKey);
+    setSelectedEventId(null);
     setEditorState({
       open: true,
       mode: "create",
@@ -180,6 +184,9 @@ export function EventsBoardApp({
   }
 
   function openEditEvent(event: BoardEvent) {
+    setSelectedDateKey(event.dateKey);
+    setSelectedMonth(startOfMonth(new Date(event.startAt)));
+    setSelectedEventId(event.id);
     setEditorState({
       open: true,
       mode: "edit",
@@ -197,6 +204,19 @@ export function EventsBoardApp({
     setSelectedDateKey(event.dateKey);
     setSelectedMonth(startOfMonth(new Date(event.startAt)));
     setSelectedEventId(event.id);
+  }
+
+  function handleSelectCalendarDate(date: Date) {
+    const dateKey = toDateKey(date);
+    const eventsForDate = getEventsForDate(board.events, dateKey);
+
+    setSelectedMonth(startOfMonth(date));
+    setSelectedDateKey(dateKey);
+    setSelectedEventId(eventsForDate[0]?.id ?? null);
+
+    if (isModeratorView && !eventsForDate.length) {
+      openCreateForDate(dateKey);
+    }
   }
 
   async function handleLogout() {
@@ -295,23 +315,26 @@ export function EventsBoardApp({
 
   return (
     <div className="min-h-screen text-white">
-      <div className="mx-auto max-w-[1720px] px-3 py-3 lg:px-4">
+      <div className="mx-auto max-w-[1680px] px-3 py-3 sm:px-4 sm:py-4">
         <div className="flex gap-4">
-          <aside className="panel-surface sticky top-3 hidden h-[calc(100vh-1.5rem)] w-[248px] shrink-0 flex-col rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(12,22,40,0.95),rgba(8,15,28,0.96))] p-4 shadow-[0_30px_90px_rgba(0,0,0,0.28)] lg:flex">
-            <div className="rounded-[1.8rem] border border-white/8 bg-white/[0.03] p-4">
-              <div className="relative h-20 overflow-hidden rounded-[1.4rem] bg-[linear-gradient(135deg,#173b91,#e21c2a)]">
+          <aside className="panel-surface surface-panel sticky top-3 hidden h-[calc(100svh-1.5rem)] w-[236px] shrink-0 flex-col overflow-hidden rounded-[1.9rem] px-3.5 py-4 lg:flex">
+            <div className="shrink-0 border-b border-white/8 pb-4">
+              <div className="relative h-14 w-[156px] overflow-hidden">
                 <Image
                   src="/branding/mger-logo.png"
                   alt="Молодая гвардия"
                   fill
-                  className="object-contain p-4"
-                  sizes="220px"
+                  className="object-contain object-left"
+                  sizes="156px"
                   priority
                 />
               </div>
+              <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.3em] text-[#8ca1cb]">
+                Штабная доска
+              </p>
             </div>
 
-            <nav className="mt-4 flex-1 space-y-1.5">
+            <nav className="mt-3 min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
               {navigationItems.map((item) => (
                 <SidebarNavButton
                   key={item.label}
@@ -323,147 +346,158 @@ export function EventsBoardApp({
               ))}
             </nav>
 
-            <div className="rounded-[1.7rem] border border-white/8 bg-white/[0.03] p-4">
-              <div className="flex items-center gap-3">
-                <div className="relative h-11 w-11 overflow-hidden rounded-full border border-white/10 bg-[#122341]">
-                  <Image
-                    src={spotlight?.photos[0]?.url ?? "/photos/event-kazan.png"}
-                    alt="Штаб"
-                    fill
-                    sizes="44px"
-                    className="object-cover"
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-white">
-                    {currentUser?.name ?? "Гость штаба"}
-                  </p>
-                  <p className="truncate text-sm text-[#8ea2c8]">
-                    {currentUser ? roleLabel[currentUser.role] : "Режим просмотра"}
-                  </p>
-                </div>
+            <div className="mt-3 shrink-0 flex items-center gap-3 border-t border-white/8 pt-3">
+              <div className="relative h-11 w-11 overflow-hidden rounded-full border border-white/10 bg-[#122341]">
+                <Image
+                  src={spotlight?.photos[0]?.url ?? "/photos/event-kazan.png"}
+                  alt="Штаб"
+                  fill
+                  sizes="44px"
+                  className="object-cover"
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-white">
+                  {currentUser?.name ?? "Гость штаба"}
+                </p>
+                <p className="truncate text-sm text-[#8ea2c8]">
+                  {currentUser ? roleLabel[currentUser.role] : "Режим просмотра"}
+                </p>
               </div>
             </div>
           </aside>
 
           <div className="min-w-0 flex-1 space-y-4">
-            <section className="panel-surface overflow-hidden rounded-[2.2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(11,21,39,0.94),rgba(8,15,28,0.95))] shadow-[0_32px_110px_rgba(0,0,0,0.28)]">
-              <div className="relative min-h-[280px] overflow-hidden">
+            <section className="panel-surface surface-panel overflow-hidden rounded-[2rem]">
+              <div className="relative min-h-[340px] overflow-hidden">
                 <Image
                   src={spotlight?.photos[0]?.url ?? "/photos/event-kazan.png"}
                   alt={spotlight?.title ?? "Молодая гвардия"}
                   fill
                   priority
+                  loading="eager"
                   sizes="(max-width: 1400px) 100vw, 1200px"
                   className="object-cover object-center"
                 />
-                <div className="absolute inset-0 bg-[linear-gradient(95deg,rgba(10,22,45,0.95)_0%,rgba(19,44,104,0.86)_34%,rgba(22,47,115,0.62)_52%,rgba(234,35,52,0.74)_84%,rgba(10,19,33,0.28)_100%)]" />
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,8,16,0.18),rgba(4,8,16,0.52))]" />
+                <div className="absolute inset-0 bg-[linear-gradient(98deg,rgba(9,20,42,0.94)_0%,rgba(20,44,100,0.84)_36%,rgba(18,40,96,0.56)_54%,rgba(148,29,43,0.68)_82%,rgba(7,14,26,0.5)_100%)]" />
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,8,16,0.18),rgba(4,8,16,0.62))]" />
 
                 <div className="relative z-10 flex h-full flex-col justify-between p-4 sm:p-5 lg:p-6">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="flex flex-wrap gap-2 lg:hidden">
-                      {navigationItems.slice(0, 4).map((item) => (
-                        <span
-                          key={item.label}
-                          className={cn(
-                            "rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em]",
-                            item.active
-                              ? "border-white/22 bg-white/14 text-white"
-                              : "border-white/12 bg-black/12 text-white/74",
-                          )}
-                        >
-                          {item.label}
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex items-center gap-3 lg:hidden">
+                        <div className="relative h-10 w-[120px] overflow-hidden">
+                          <Image
+                            src="/branding/mger-logo.png"
+                            alt="Молодая гвардия"
+                            fill
+                            className="object-contain object-left"
+                            sizes="120px"
+                            priority
+                          />
+                        </div>
+                        <span className="rounded-full border border-white/16 bg-black/14 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/80">
+                          Доска мероприятий
                         </span>
-                      ))}
-                    </div>
+                      </div>
 
-                    <div className="ml-auto flex flex-wrap items-center gap-2">
-                      {isModeratorView ? (
-                        <button
-                          type="button"
-                          onClick={() => openCreateForDate(selectedDateKey)}
-                          className="inline-flex items-center gap-2 rounded-full bg-[var(--mger-red)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_36px_rgba(234,35,52,0.35)] transition hover:bg-[#ff3245]"
-                        >
-                          <WandSparkles className="h-4 w-4" />
-                          Создать мероприятие
-                        </button>
-                      ) : null}
-
-                      <IconButton icon={Search} label="Поиск" />
-                      <IconButton icon={Bell} label="Уведомления" />
-                      <IconButton icon={Settings} label="Настройки" />
-
-                      {currentUser ? (
-                        <button
-                          type="button"
-                          onClick={handleLogout}
-                          className="inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/[0.08] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/[0.14]"
-                        >
-                          <LogOut className="h-4 w-4" />
-                          Выйти
-                        </button>
-                      ) : (
-                        <>
+                      <div className="ml-auto flex flex-wrap items-center gap-2 sm:justify-end">
+                        {isModeratorView ? (
                           <button
                             type="button"
-                            onClick={() => {
-                              setAuthMode("login");
-                              setAuthOpen(true);
-                            }}
+                            onClick={() => openCreateForDate(selectedDateKey)}
+                            className="inline-flex items-center gap-2 rounded-full bg-[var(--mger-red)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_36px_rgba(234,35,52,0.35)] transition hover:bg-[#ff3245]"
+                          >
+                            <WandSparkles className="h-4 w-4" />
+                            Создать мероприятие
+                          </button>
+                        ) : null}
+
+                        <div className="hidden items-center gap-2 sm:flex">
+                          <IconButton icon={Search} label="Поиск" />
+                          <IconButton icon={Bell} label="Уведомления" />
+                          <IconButton icon={Settings} label="Настройки" />
+                        </div>
+
+                        {currentUser ? (
+                          <button
+                            type="button"
+                            onClick={handleLogout}
                             className="inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/[0.08] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/[0.14]"
                           >
-                            <KeyRound className="h-4 w-4" />
-                            Войти
+                            <LogOut className="h-4 w-4" />
+                            Выйти
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setAuthMode("register");
-                              setAuthOpen(true);
-                            }}
-                            className="inline-flex items-center gap-2 rounded-full border border-white/14 bg-black/18 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-black/26"
-                          >
-                            <Users className="h-4 w-4" />
-                            Регистрация
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_340px] xl:items-end">
-                    <div className="max-w-3xl">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-white/72">
-                        Молодая гвардия
-                      </p>
-                      <h1 className="mt-3 font-display text-[3rem] uppercase leading-[0.9] tracking-tight text-white sm:text-[4.2rem]">
-                        Доска мероприятий
-                      </h1>
-                      <p className="mt-3 max-w-2xl text-base leading-7 text-white/84">
-                        Плотный календарь штаба с фото, регистрацией, ролями модераторов и отметками посещения в одном рабочем окне.
-                      </p>
-                      <div className="mt-5 flex flex-wrap gap-2">
-                        <HeroMetric label="События" value={board.summary.upcomingLabel} />
-                        <HeroMetric label="Команда" value={board.summary.membersLabel} />
-                        <HeroMetric label="Штаб" value={board.summary.moderationLabel} />
-                        <HeroMetric label="Отклики" value={board.summary.responseLabel} />
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setAuthMode("login");
+                                setAuthOpen(true);
+                              }}
+                              className="inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/[0.08] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/[0.14]"
+                            >
+                              <KeyRound className="h-4 w-4" />
+                              Войти
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setAuthMode("register");
+                                setAuthOpen(true);
+                              }}
+                              className="inline-flex items-center gap-2 rounded-full border border-white/14 bg-black/18 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-black/26"
+                            >
+                              <Users className="h-4 w-4" />
+                              Регистрация
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
 
-                    <div className="rounded-[1.7rem] border border-white/14 bg-[rgba(8,14,26,0.44)] p-4 backdrop-blur-md">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/64">
-                        Ближайший акцент
-                      </p>
-                      <h2 className="mt-3 line-clamp-2 font-display text-3xl uppercase leading-[0.92] tracking-tight text-white">
-                        {spotlight?.title ?? "Ближайшее мероприятие"}
-                      </h2>
-                      <p className="mt-2 line-clamp-2 text-sm leading-6 text-white/78">
-                        {spotlight?.summary ?? "Откройте календарь и выберите событие для деталей, RSVP и модерации."}
-                      </p>
-                      <div className="mt-4 grid grid-cols-2 gap-2">
-                        <SurfaceBadge label="Дата" value={spotlight ? format(new Date(spotlight.startAt), "d MMMM", { locale: ru }) : "Скоро"} />
-                        <SurfaceBadge label="Локация" value={spotlight?.location ?? "Штаб"} />
+                    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_320px] xl:items-end">
+                      <div className="max-w-3xl">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-white/72">
+                          Молодая гвардия
+                        </p>
+                        <h1 className="mt-3 font-display text-[3rem] uppercase leading-[0.9] tracking-tight text-white sm:text-[4rem]">
+                          Доска мероприятий
+                        </h1>
+                        <p className="mt-3 max-w-2xl text-base leading-7 text-white/84">
+                          Календарь штаба с регистрацией, ролями модераторов и фотоотчётами в одном чистом рабочем окне.
+                        </p>
+                        <div className="mt-6 flex flex-wrap gap-x-6 gap-y-3">
+                          <HeroMetric label="События" value={board.summary.upcomingLabel} />
+                          <HeroMetric label="Команда" value={board.summary.membersLabel} />
+                          <HeroMetric label="Штаб" value={board.summary.moderationLabel} />
+                          <HeroMetric label="Отклики" value={board.summary.responseLabel} />
+                        </div>
+                      </div>
+
+                      <div className="border-t border-white/10 pt-4 xl:border-t-0 xl:border-l xl:pl-6 xl:pt-0">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/64">
+                          Ближайший акцент
+                        </p>
+                        <h2 className="mt-3 line-clamp-3 font-display text-[2.1rem] uppercase leading-[0.92] tracking-tight text-white">
+                          {spotlight?.title ?? "Ближайшее мероприятие"}
+                        </h2>
+                        <p className="mt-2 line-clamp-3 text-sm leading-6 text-white/78">
+                          {spotlight?.summary ??
+                            "Откройте календарь и выберите событие для деталей, RSVP и модерации."}
+                        </p>
+                        <div className="mt-4 grid grid-cols-2 gap-2">
+                          <SurfaceBadge
+                            label="Дата"
+                            value={
+                              spotlight
+                                ? format(new Date(spotlight.startAt), "d MMMM", { locale: ru })
+                                : "Скоро"
+                            }
+                          />
+                          <SurfaceBadge label="Локация" value={spotlight?.location ?? "Штаб"} />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -491,15 +525,15 @@ export function EventsBoardApp({
               </div>
             ) : null}
 
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
-              <section className="panel-surface min-w-0 rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(12,22,40,0.96),rgba(8,16,31,0.96))] p-4 shadow-[0_28px_80px_rgba(0,0,0,0.26)] sm:p-5">
+            <div className="space-y-4">
+              <section className="panel-surface surface-panel min-w-0 rounded-[1.85rem] p-4 sm:p-5">
                 <div className="flex flex-col gap-4 border-b border-white/8 pb-4">
                   <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                     <div>
                       <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[#7f93bb]">
                         Оперативная панель
                       </p>
-                      <h2 className="mt-2 font-display text-[2.25rem] uppercase tracking-tight text-white">
+                      <h2 className="mt-2 font-display text-[2.15rem] uppercase tracking-tight text-white">
                         Доска мероприятий
                       </h2>
                     </div>
@@ -520,7 +554,7 @@ export function EventsBoardApp({
                         />
                       </div>
 
-                      <label className="flex min-w-[230px] items-center gap-2 rounded-full border border-white/8 bg-white/[0.03] px-4 py-2.5 text-sm text-[#9db2d8]">
+                      <label className="surface-chip flex min-w-[230px] items-center gap-2 rounded-full px-4 py-2.5 text-sm text-[#9db2d8]">
                         <Search className="h-4 w-4 shrink-0" />
                         <input
                           type="search"
@@ -539,17 +573,20 @@ export function EventsBoardApp({
                           setSelectedDateKey(toDateKey(today));
                           setSelectedEventId(null);
                         }}
-                        className="rounded-full border border-white/8 bg-white/[0.03] px-4 py-2.5 text-sm font-semibold text-[#d2def7] transition hover:bg-white/[0.06]"
+                        className="surface-chip rounded-full px-4 py-2.5 text-sm font-semibold text-[#d2def7] transition hover:bg-white/[0.06]"
                       >
                         Сегодня
                       </button>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    <SurfaceBadge label="Выбранная дата" value={selectedDateLabel} />
-                    <SurfaceBadge label="Событий в день" value={`${dateEvents.length}`} />
-                    <SurfaceBadge label="Обновлено" value={format(new Date(board.now), "d MMM · HH:mm", { locale: ru })} />
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-3 text-sm text-[#aac0e4]">
+                    <InlineFact label="Выбранная дата" value={selectedDateLabel} />
+                    <InlineFact label="Событий в день" value={`${dateEvents.length}`} />
+                    <InlineFact
+                      label="Обновлено"
+                      value={format(new Date(board.now), "d MMM · HH:mm", { locale: ru })}
+                    />
                     {isModeratorView ? (
                       <button
                         type="button"
@@ -570,10 +607,7 @@ export function EventsBoardApp({
                       selectedDateKey={selectedDateKey}
                       events={board.events}
                       canManageEvents={isModeratorView}
-                      onSelectDate={(date) => {
-                        setSelectedMonth(startOfMonth(date));
-                        setSelectedDateKey(toDateKey(date));
-                      }}
+                      onSelectDate={handleSelectCalendarDate}
                       onJumpToToday={() => {
                         const today = new Date(board.now);
                         setSelectedMonth(startOfMonth(today));
@@ -601,7 +635,7 @@ export function EventsBoardApp({
                             key={event.id}
                             type="button"
                             onClick={() => jumpToEvent(event)}
-                            className="group flex w-full items-center gap-4 rounded-[1.5rem] border border-white/8 bg-white/[0.03] px-4 py-4 text-left transition hover:border-white/14 hover:bg-white/[0.05]"
+                            className="group surface-subtle flex w-full items-center gap-4 rounded-[1.3rem] px-4 py-4 text-left transition hover:border-white/14 hover:bg-white/[0.05]"
                           >
                             <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-[1.1rem] border border-white/8 bg-[#101e36]">
                               <Image
@@ -632,65 +666,35 @@ export function EventsBoardApp({
                           </button>
                         ))
                       ) : (
-                        <div className="rounded-[1.6rem] border border-dashed border-white/10 bg-white/[0.03] px-5 py-8 text-center text-sm text-[#92a5ca]">
+                        <div className="rounded-[1.4rem] border border-dashed border-white/10 bg-white/[0.03] px-5 py-8 text-center text-sm text-[#92a5ca]">
                           По вашему запросу события не найдены.
                         </div>
                       )}
                     </div>
                   )}
                 </div>
-
-                <div className="mt-4 rounded-[1.7rem] border border-white/8 bg-[linear-gradient(90deg,rgba(29,56,122,0.36),rgba(17,29,52,0.16),rgba(234,35,52,0.12))] p-4">
-                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                    <div className="max-w-xl">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#8ca1cb]">
-                        Промо блока штаба
-                      </p>
-                      <h3 className="mt-2 text-xl font-semibold text-white">
-                        Продвигайте выезды и собирайте команду в одном календаре
-                      </h3>
-                      <p className="mt-1 text-sm leading-6 text-[#9bb0d5]">
-                        В карточке события уже есть фотографии, RSVP и модерация, поэтому активист видит полную картину без переходов по разным разделам.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const target = spotlight ?? board.events[0];
-                        if (target) {
-                          jumpToEvent(target);
-                        }
-                      }}
-                      className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/[0.06] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
-                    >
-                      Открыть событие
-                    </button>
-                  </div>
-                </div>
               </section>
 
-              <div className="xl:sticky xl:top-3">
-                <EventDetailPanel
-                  selectedDateKey={selectedDateKey}
-                  selectedEventId={resolvedSelectedEventId}
-                  events={dateEvents}
-                  currentUser={currentUser}
-                  canManageEvents={isModeratorView}
-                  rsvpPendingId={rsvpPendingId}
-                  onSelectEvent={setSelectedEventId}
-                  onOpenCreate={openCreateForDate}
-                  onOpenEdit={openEditEvent}
-                  onRequireAuth={() => {
-                    setAuthMode("login");
-                    setAuthOpen(true);
-                  }}
-                  onSetResponse={handleRsvp}
-                />
-              </div>
+              <EventDetailPanel
+                selectedDateKey={selectedDateKey}
+                selectedEventId={resolvedSelectedEventId}
+                events={dateEvents}
+                currentUser={currentUser}
+                canManageEvents={isModeratorView}
+                rsvpPendingId={rsvpPendingId}
+                onSelectEvent={setSelectedEventId}
+                onOpenCreate={openCreateForDate}
+                onOpenEdit={openEditEvent}
+                onRequireAuth={() => {
+                  setAuthMode("login");
+                  setAuthOpen(true);
+                }}
+                onSetResponse={handleRsvp}
+              />
             </div>
 
             {isModeratorView ? (
-              <section className="panel-surface rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(12,22,40,0.96),rgba(8,16,31,0.96))] p-5 shadow-[0_28px_80px_rgba(0,0,0,0.26)]">
+              <section className="panel-surface surface-panel rounded-[1.85rem] p-5">
                 <div className="flex flex-col gap-4 border-b border-white/8 pb-4 lg:flex-row lg:items-end lg:justify-between">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[#7f93bb]">
@@ -705,7 +709,7 @@ export function EventsBoardApp({
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    <label className="flex min-w-[230px] items-center gap-2 rounded-full border border-white/8 bg-white/[0.03] px-4 py-2.5 text-sm text-[#9db2d8]">
+                    <label className="surface-chip flex min-w-[230px] items-center gap-2 rounded-full px-4 py-2.5 text-sm text-[#9db2d8]">
                       <Search className="h-4 w-4 shrink-0" />
                       <input
                         type="search"
@@ -730,7 +734,7 @@ export function EventsBoardApp({
                   {filteredEventDesk.map((event) => (
                     <div
                       key={event.id}
-                      className="rounded-[1.6rem] border border-white/8 bg-white/[0.03] p-4"
+                      className="surface-subtle rounded-[1.3rem] p-4"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -766,7 +770,7 @@ export function EventsBoardApp({
             ) : null}
 
             {isOwnerView ? (
-              <section className="panel-surface rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(12,22,40,0.96),rgba(8,16,31,0.96))] p-5 shadow-[0_28px_80px_rgba(0,0,0,0.26)]">
+              <section className="panel-surface surface-panel rounded-[1.85rem] p-5">
                 <div className="flex flex-col gap-4 border-b border-white/8 pb-4 lg:flex-row lg:items-end lg:justify-between">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[#7f93bb]">
@@ -780,7 +784,7 @@ export function EventsBoardApp({
                     </p>
                   </div>
 
-                  <label className="flex min-w-[250px] items-center gap-2 rounded-full border border-white/8 bg-white/[0.03] px-4 py-2.5 text-sm text-[#9db2d8]">
+                  <label className="surface-chip flex min-w-[250px] items-center gap-2 rounded-full px-4 py-2.5 text-sm text-[#9db2d8]">
                     <Search className="h-4 w-4 shrink-0" />
                     <input
                       type="search"
@@ -801,7 +805,7 @@ export function EventsBoardApp({
                     return (
                       <div
                         key={member.id}
-                        className="flex flex-col gap-4 rounded-[1.5rem] border border-white/8 bg-white/[0.03] px-4 py-4 lg:flex-row lg:items-center lg:justify-between"
+                        className="surface-subtle flex flex-col gap-4 rounded-[1.3rem] px-4 py-4 lg:flex-row lg:items-center lg:justify-between"
                       >
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
@@ -924,14 +928,14 @@ function SidebarNavButton({
     <button
       type="button"
       className={cn(
-        "flex w-full items-center justify-between rounded-[1.2rem] px-3 py-3 text-left transition",
+        "flex w-full items-center justify-between rounded-[1rem] px-3 py-2.5 text-left transition",
         active
-          ? "bg-[#173b91]/20 text-white shadow-[inset_0_0_0_1px_rgba(80,124,255,0.26)]"
+          ? "bg-[#173b91]/14 text-white shadow-[inset_0_0_0_1px_rgba(80,124,255,0.26)]"
           : "text-[#8ea2c8] hover:bg-white/[0.04] hover:text-white",
       )}
     >
       <span className="flex items-center gap-3">
-        <Icon className="h-5 w-5" />
+        <Icon className="h-[1.15rem] w-[1.15rem]" />
         <span className="text-sm font-medium">{label}</span>
       </span>
       {badge ? (
@@ -954,7 +958,7 @@ function IconButton({
     <button
       type="button"
       aria-label={label}
-      className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/14 bg-white/[0.08] text-white transition hover:bg-white/[0.14]"
+      className="inline-flex h-11 w-11 items-center justify-center rounded-[1rem] border border-white/14 bg-white/[0.08] text-white transition hover:bg-white/[0.14]"
     >
       <Icon className="h-5 w-5" />
     </button>
@@ -963,18 +967,29 @@ function IconButton({
 
 function HeroMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-full border border-white/14 bg-white/[0.08] px-4 py-2 text-sm text-white/90 backdrop-blur-md">
-      <span className="mr-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/64">
+    <div className="min-w-[132px]">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/64">
         {label}
-      </span>
-      <span className="font-semibold text-white">{value}</span>
+      </p>
+      <p className="mt-1 text-sm font-semibold text-white">{value}</p>
+    </div>
+  );
+}
+
+function InlineFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-[132px]">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7f94bc]">
+        {label}
+      </p>
+      <p className="mt-1 text-sm font-semibold text-white">{value}</p>
     </div>
   );
 }
 
 function SurfaceBadge({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[1.1rem] border border-white/8 bg-white/[0.03] px-3 py-2.5">
+    <div className="surface-subtle rounded-[1rem] px-3 py-2.5">
       <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7f94bc]">
         {label}
       </p>

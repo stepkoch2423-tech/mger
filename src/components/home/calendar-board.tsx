@@ -1,5 +1,7 @@
 "use client";
 
+import type { BoardEvent } from "@/lib/dashboard";
+import { cn, formatRussianPlural, toDateKey } from "@/lib/utils";
 import {
   addDays,
   addMonths,
@@ -14,9 +16,7 @@ import {
   subMonths,
 } from "date-fns";
 import { ru } from "date-fns/locale";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { BoardEvent } from "@/lib/dashboard";
-import { cn, toDateKey } from "@/lib/utils";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 
 type CalendarBoardProps = {
   selectedMonth: Date;
@@ -61,29 +61,29 @@ export function CalendarBoard({
   ).length;
 
   return (
-    <section className="panel-surface overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(12,22,40,0.96),rgba(8,16,31,0.96))] shadow-[0_28px_80px_rgba(0,0,0,0.28)]">
-      <div className="border-b border-white/8 px-4 py-4 sm:px-5">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-          <div className="space-y-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[#7e93bc]">
+    <section className="overflow-hidden rounded-[1.55rem] border border-white/6 bg-black/10">
+      <div className="px-4 py-4 sm:px-5">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
+          <div className="space-y-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[#8398be]">
               Календарь движения
             </p>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={onPreviousMonth}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition hover:bg-white/[0.08] hover:text-white"
+                className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-[1rem] border border-white/10 bg-white/[0.04] text-slate-300 transition hover:bg-white/[0.08] hover:text-white"
                 aria-label="Предыдущий месяц"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
-              <h2 className="font-display text-[2rem] uppercase tracking-tight text-white sm:text-[2.3rem]">
+              <h2 className="min-w-0 font-display text-[clamp(2rem,4vw,3.5rem)] uppercase leading-[0.92] tracking-tight text-white">
                 {monthLabel}
               </h2>
               <button
                 type="button"
                 onClick={onNextMonth}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition hover:bg-white/[0.08] hover:text-white"
+                className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-[1rem] border border-white/10 bg-white/[0.04] text-slate-300 transition hover:bg-white/[0.08] hover:text-white"
                 aria-label="Следующий месяц"
               >
                 <ChevronRight className="h-5 w-5" />
@@ -91,38 +91,96 @@ export function CalendarBoard({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#95a8cc]">
-              Прошлый месяц: {previousMonthEvents}
-            </span>
-            <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#95a8cc]">
-              Следующий: {nextMonthEvents}
-            </span>
+          <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#95a8cc] xl:justify-end">
             <button
               type="button"
               onClick={onJumpToToday}
-              className="rounded-full bg-[var(--mger-red)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#ff3748]"
+              className="rounded-full bg-[var(--mger-red)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#ff3748]"
             >
               Сегодня
             </button>
+            <span className="surface-chip rounded-full px-3 py-2">
+              Прошлый месяц: {previousMonthEvents}
+            </span>
+            <span className="surface-chip rounded-full px-3 py-2">
+              Следующий: {nextMonthEvents}
+            </span>
           </div>
         </div>
       </div>
 
-      <div className="border-b border-white/8 px-4 py-3 sm:hidden">
-        <div className="flex items-center justify-between rounded-[1.2rem] border border-white/8 bg-white/[0.03] px-3 py-2 text-[11px] font-medium text-[#9aaed3]">
-          <span>Листайте календарь по горизонтали</span>
-          <span className="rounded-full bg-white/[0.08] px-3 py-1 font-semibold text-white">Swipe</span>
+      <div className="border-t border-white/8 px-3 py-4 sm:hidden">
+        <div className="mb-2 grid grid-cols-7 gap-1.5">
+          {weekDays.map((day) => (
+            <div
+              key={day}
+              className="rounded-[0.75rem] bg-white/[0.035] px-1 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8195bb]"
+            >
+              {day}
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-7 gap-1.5">
+          {calendarDays.map((day) => {
+            const dateKey = toDateKey(day);
+            const dayEvents = eventsByDate.get(dateKey) ?? [];
+            const active = dateKey === selectedDateKey;
+            const insideCurrentMonth = isSameMonth(day, selectedMonth);
+
+            return (
+              <button
+                key={dateKey}
+                type="button"
+                onClick={() => onSelectDate(day)}
+                className={cn(
+                  "relative aspect-square rounded-[0.95rem] border p-1.5 transition",
+                  active
+                    ? "border-[#4a76df] bg-[linear-gradient(180deg,rgba(45,73,151,0.32),rgba(11,19,34,0.94))]"
+                    : "border-white/8 bg-white/[0.025] hover:border-white/14 hover:bg-white/[0.04]",
+                  !insideCurrentMonth && "opacity-45",
+                )}
+              >
+                <div className="flex h-full flex-col">
+                  <span
+                    className={cn(
+                      "inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold",
+                      active
+                        ? "bg-white text-[#17326f]"
+                        : isToday(day)
+                          ? "bg-[var(--mger-red)] text-white"
+                          : "bg-white/[0.06] text-white",
+                    )}
+                  >
+                    {format(day, "d")}
+                  </span>
+
+                  <div className="mt-auto flex items-center justify-between">
+                    <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#8398be]">
+                      {dayEvents.length
+                        ? `${dayEvents.length}`
+                        : insideCurrentMonth
+                          ? ""
+                          : "арх"}
+                    </span>
+                    {dayEvents.length ? (
+                      <span className="inline-flex h-2.5 w-2.5 rounded-full bg-[var(--mger-red)]" />
+                    ) : null}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      <div className="overflow-x-auto px-3 py-3 sm:px-4 sm:py-4">
-        <div className="min-w-[760px]">
+      <div className="hidden border-t border-white/8 px-3 py-4 sm:block sm:px-4">
+        <div>
           <div className="mb-2 grid grid-cols-7 gap-2">
             {weekDays.map((day) => (
               <div
                 key={day}
-                className="rounded-[1rem] bg-white/[0.04] px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.28em] text-[#8195bb]"
+                className="rounded-[0.9rem] bg-white/[0.035] px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.28em] text-[#8195bb]"
               >
                 {day}
               </div>
@@ -135,6 +193,7 @@ export function CalendarBoard({
               const dayEvents = eventsByDate.get(dateKey) ?? [];
               const active = dateKey === selectedDateKey;
               const insideCurrentMonth = isSameMonth(day, selectedMonth);
+              const firstEvent = dayEvents[0] ?? null;
 
               return (
                 <button
@@ -142,17 +201,17 @@ export function CalendarBoard({
                   type="button"
                   onClick={() => onSelectDate(day)}
                   className={cn(
-                    "group relative min-h-[132px] rounded-[1.45rem] border px-3 py-3 text-left transition",
+                    "group flex aspect-square min-w-0 flex-col overflow-hidden rounded-[1.15rem] border px-2.5 py-2.5 text-left transition",
                     active
-                      ? "border-[#3f6fe3] bg-[linear-gradient(180deg,rgba(58,94,190,0.32),rgba(16,27,47,0.92))] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_14px_34px_rgba(10,20,44,0.45)]"
-                      : "border-white/8 bg-white/[0.03] hover:border-white/16 hover:bg-white/[0.05]",
+                      ? "border-[#4a76df] bg-[linear-gradient(180deg,rgba(45,73,151,0.3),rgba(11,19,34,0.94))] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_12px_32px_rgba(10,20,44,0.34)]"
+                      : "border-white/8 bg-white/[0.025] hover:border-white/14 hover:bg-white/[0.04]",
                     !insideCurrentMonth && "opacity-45",
                   )}
                 >
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-start justify-between gap-2">
                     <span
                       className={cn(
-                        "inline-flex h-9 w-9 items-center justify-center rounded-full text-base font-bold",
+                        "inline-flex h-9 w-9 items-center justify-center rounded-[0.95rem] text-sm font-bold",
                         active
                           ? "bg-white text-[#17326f]"
                           : isToday(day)
@@ -163,51 +222,58 @@ export function CalendarBoard({
                       {format(day, "d")}
                     </span>
 
-                    {canManageEvents ? (
-                      <span className="rounded-full border border-white/8 bg-white/[0.04] px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.24em] text-[#7f93b9]">
-                        Штаб
+                    {dayEvents.length ? (
+                      <span className="inline-flex min-w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#dce7ff]">
+                        {dayEvents.length}
                       </span>
-                    ) : null}
+                    ) : insideCurrentMonth && canManageEvents ? (
+                      <span
+                        className={cn(
+                          "inline-flex h-8 w-8 items-center justify-center rounded-[0.9rem] border border-white/10 bg-white/[0.04] text-[#9eb3d8] transition group-hover:border-[#4a76df]/44 group-hover:text-white",
+                          active && "border-[#4a76df]/44 text-white",
+                        )}
+                        aria-hidden="true"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </span>
+                    ) : (
+                      <span className="inline-flex h-8 items-center text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8599c0]">
+                        {insideCurrentMonth ? "Пусто" : "Архив"}
+                      </span>
+                    )}
                   </div>
 
-                  <div className="mt-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[#7f94bb]">
-                      {dayEvents.length
-                        ? `${dayEvents.length} ${dayEvents.length === 1 ? "событие" : "события"}`
-                        : insideCurrentMonth
-                          ? "свободно"
-                          : "другой месяц"}
-                    </p>
-
-                    {dayEvents.length ? (
-                      <div className="mt-2 space-y-2">
-                        {dayEvents.slice(0, 2).map((event) => (
-                          <div
-                            key={event.id}
-                            className={cn(
-                              "rounded-[1rem] px-2.5 py-2 text-xs leading-4",
-                              active
-                                ? "bg-white/[0.92] text-slate-900"
-                                : "bg-[#10203a] text-[#d8e4ff]",
-                            )}
-                          >
-                            <span className="block text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--mger-red)]">
-                              {format(new Date(event.startAt), "HH:mm")}
-                            </span>
-                            <span className="mt-1 block line-clamp-2 break-words">{event.title}</span>
-                          </div>
-                        ))}
-
-                        {dayEvents.length > 2 ? (
-                          <p className="px-1 text-[11px] font-medium text-[#8ea2c7]">
-                            Ещё {dayEvents.length - 2}
+                  <div className="mt-3 flex min-h-0 flex-1 flex-col justify-between">
+                    {firstEvent ? (
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--mger-red)]">
+                          {format(new Date(firstEvent.startAt), "HH:mm")}
+                        </p>
+                        <p
+                          className={cn(
+                            "line-clamp-2 text-[13px] font-semibold leading-5",
+                            active ? "text-white" : "text-[#dce7ff]",
+                          )}
+                        >
+                          {firstEvent.title}
+                        </p>
+                        {dayEvents.length > 1 ? (
+                          <p className="mt-2 text-[11px] leading-4 text-[#8ea2c7]">
+                            + ещё {dayEvents.length - 1}
                           </p>
                         ) : null}
                       </div>
                     ) : (
-                      <p className="mt-2 text-xs leading-5 text-[#7f93b8]">
-                        {insideCurrentMonth ? "Свободный слот для нового выезда." : "Дата соседнего месяца."}
-                      </p>
+                      <div className="mt-auto">
+                        <p className="text-[12px] font-semibold leading-4 text-[#d8e5ff]">
+                          {insideCurrentMonth ? "Свободно" : "Соседний месяц"}
+                        </p>
+                        {insideCurrentMonth ? (
+                          <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7f94bb]">
+                            {canManageEvents ? "Нажмите, чтобы добавить" : "День без событий"}
+                          </p>
+                        ) : null}
+                      </div>
                     )}
                   </div>
                 </button>
@@ -226,7 +292,7 @@ export function CalendarBoard({
               {format(addDays(gridStart, 6), "d MMMM", { locale: ru })}
             </strong>
           </span>
-          <span>{events.length} событий в диапазоне обзора</span>
+          <span>{formatRussianPlural(events.length, ["событие", "события", "событий"])} в обзоре</span>
         </div>
       </div>
     </section>
