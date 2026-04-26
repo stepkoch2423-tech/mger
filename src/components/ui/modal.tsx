@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils";
 
 const sizeClasses = {
   sm: "max-w-lg",
-  md: "max-w-3xl",
-  lg: "max-w-6xl",
+  md: "max-w-2xl",
+  lg: "max-w-5xl",
 } as const;
 
 type ModalProps = {
@@ -65,13 +65,14 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-[#020816]/78 px-4 py-6 backdrop-blur-md sm:items-center"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-[#020816]/78 px-3 py-3 backdrop-blur-md sm:items-center sm:px-4 sm:py-5"
       onClick={onClose}
       role="presentation"
     >
       <div
+        data-tone="adaptive"
         className={cn(
-          "panel-surface relative w-full overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(11,23,41,0.98),rgba(9,18,33,0.98))] shadow-[0_40px_140px_rgba(0,0,0,0.55)]",
+          "panel-surface relative w-full overflow-hidden rounded-[1.6rem] border border-white/10 bg-[linear-gradient(180deg,rgba(11,23,41,0.98),rgba(9,18,33,0.98))] shadow-[0_40px_140px_rgba(0,0,0,0.55)] sm:rounded-[2rem]",
           sizeClasses[size],
         )}
         onClick={(event) => event.stopPropagation()}
@@ -84,18 +85,18 @@ export function Modal({
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition hover:bg-white/[0.08] hover:text-white"
+          className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition hover:bg-white/[0.08] hover:text-white sm:right-4 sm:top-4 sm:h-10 sm:w-10"
           aria-label="Закрыть"
         >
           <X className="h-5 w-5" />
         </button>
-        <div className="border-b border-white/8 px-6 py-6 sm:px-8">
+        <div className="border-b border-white/8 px-4 py-3 sm:px-6 sm:py-4">
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.34em] text-[#7d90b7]">
             Штабной интерфейс
           </p>
           <h2
             id="modal-title"
-            className="font-display text-3xl uppercase tracking-tight text-white"
+            className="font-display text-xl uppercase tracking-tight text-white sm:text-2xl"
           >
             {title}
           </h2>
@@ -105,7 +106,9 @@ export function Modal({
             </p>
           ) : null}
         </div>
-        <div className="max-h-[82vh] overflow-y-auto px-6 py-6 sm:px-8">{children}</div>
+        <div className="max-h-[min(100svh-7rem,28rem)] overflow-y-auto px-4 py-4 sm:max-h-[min(72svh,31rem)] sm:px-6 sm:py-5">
+          {children}
+        </div>
       </div>
     </div>
   );

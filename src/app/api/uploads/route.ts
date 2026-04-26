@@ -4,7 +4,6 @@ import { extname, join } from "path";
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { READ_ONLY_DEPLOYMENT_MESSAGE, isReadOnlyDeployment } from "@/lib/deployment";
-import { canManageEvents } from "@/lib/permissions";
 
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
 
@@ -37,8 +36,8 @@ export async function POST(request: Request) {
 
   const currentUser = await getCurrentUser();
 
-  if (!canManageEvents(currentUser?.role)) {
-    return NextResponse.json({ error: "Загрузка доступна только модератору." }, { status: 403 });
+  if (!currentUser) {
+    return NextResponse.json({ error: "Нужно войти в аккаунт." }, { status: 401 });
   }
 
   try {

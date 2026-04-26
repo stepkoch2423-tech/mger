@@ -7,19 +7,18 @@ const requiredText = (label: string, min = 2) =>
     .trim()
     .min(min, `${label} должно содержать не меньше ${min} символов.`);
 
+const optionalText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max, `Поле не должно быть длиннее ${max} символов.`)
+    .optional()
+    .default("");
+
 const photoUrlSchema = z.string().trim().refine(
   (value) => value.startsWith("/") || /^https?:\/\//.test(value),
   "Одна из ссылок на фотографии некорректна.",
 );
-
-export const registerSchema = z.object({
-  name: requiredText("Имя"),
-  email: z.email("Укажите корректный email."),
-  password: z
-    .string()
-    .min(8, "Пароль должен содержать минимум 8 символов.")
-    .max(64, "Пароль слишком длинный."),
-});
 
 export const loginSchema = z.object({
   email: z.email("Укажите корректный email."),
@@ -57,8 +56,36 @@ export const eventSchema = z
     path: ["endAt"],
   });
 
+export const profileSchema = z.object({
+  firstName: optionalText(80),
+  lastName: optionalText(80),
+  patronymic: optionalText(80),
+  birthYear: z
+    .preprocess(
+      (value) =>
+        value === "" || value === null || value === undefined ? null : Number(value),
+      z
+        .number()
+        .int()
+        .min(1900, "Укажите корректный год рождения.")
+        .max(new Date().getFullYear(), "Год рождения не может быть в будущем.")
+        .nullable(),
+    )
+    .optional()
+    .default(null),
+  education: optionalText(180),
+  headquarters: optionalText(140),
+  about: optionalText(900),
+  achievements: optionalText(900),
+  avatarUrl: photoUrlSchema.or(z.literal("")).optional().default(""),
+});
+
 export const roleSchema = z.object({
   role: z.enum([Role.ACTIVIST, Role.MODERATOR]),
+});
+
+export const userStatusSchema = z.object({
+  isBlocked: z.boolean(),
 });
 
 export const rsvpSchema = z.object({

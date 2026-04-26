@@ -4,7 +4,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { READ_ONLY_DEPLOYMENT_MESSAGE, isReadOnlyDeployment } from "@/lib/deployment";
 import { canManageMembers } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
-import { roleSchema } from "@/lib/validators";
+import { userStatusSchema } from "@/lib/validators";
 
 type Context = {
   params: Promise<{
@@ -21,18 +21,18 @@ export async function PATCH(request: Request, context: Context) {
 
   if (!canManageMembers(currentUser?.role)) {
     return NextResponse.json(
-      { error: "Только владелец штаба может менять роли." },
+      { error: "Только владелец штаба может блокировать участников." },
       { status: 403 },
     );
   }
 
   try {
     const body = await request.json();
-    const parsed = roleSchema.safeParse(body);
+    const parsed = userStatusSchema.safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.issues[0]?.message ?? "Некорректная роль." },
+        { error: parsed.error.issues[0]?.message ?? "Некорректный статус." },
         { status: 400 },
       );
     }
@@ -41,7 +41,7 @@ export async function PATCH(request: Request, context: Context) {
 
     if (userId === currentUser?.id) {
       return NextResponse.json(
-        { error: "Нельзя изменить собственную роль." },
+        { error: "Нельзя заблокировать собственный профиль." },
         { status: 400 },
       );
     }
@@ -58,7 +58,7 @@ export async function PATCH(request: Request, context: Context) {
 
     if (target.role === Role.OWNER) {
       return NextResponse.json(
-        { error: "Роль владельца нельзя менять через интерфейс." },
+        { error: "Профиль владельца нельзя блокировать." },
         { status: 400 },
       );
     }
@@ -68,14 +68,22 @@ export async function PATCH(request: Request, context: Context) {
         id: userId,
       },
       data: {
-        role: parsed.data.role,
+        isBlocked: parsed.data.isBlocked,
       },
     });
+
+    if (parsed.data.isBlocked) {
+      await prisma.session.deleteMany({
+        where: {
+          userId,
+        },
+      });
+    }
 
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json(
-      { error: "Не удалось обновить роль пользователя." },
+      { error: "Не удалось обновить статус пользователя." },
       { status: 500 },
     );
   }

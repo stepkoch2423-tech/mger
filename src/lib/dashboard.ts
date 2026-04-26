@@ -2,19 +2,9 @@ import { addMonths, endOfMonth, startOfMonth, subMonths } from "date-fns";
 import { cache } from "react";
 import { RSVPStatus, Role } from "@prisma/client";
 import type { SessionUser } from "@/lib/auth/session";
-import { canManageEvents, canManageMembers } from "@/lib/permissions";
+import { canManageEvents } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { formatRussianPlural, toDateKey } from "@/lib/utils";
-
-export type BoardMember = {
-  id: string;
-  name: string;
-  email: string;
-  role: Role;
-  createdAt: string;
-  responsesCount: number;
-  createdEventsCount: number;
-};
 
 export type BoardEvent = {
   id: string;
@@ -58,7 +48,6 @@ export type BoardPayload = {
   };
   spotlight: BoardEvent | null;
   events: BoardEvent[];
-  members: BoardMember[];
 };
 
 const getDashboardSnapshot = cache(async () => {
@@ -108,17 +97,7 @@ const getDashboardSnapshot = cache(async () => {
     prisma.user.findMany({
       orderBy: [{ role: "asc" }, { createdAt: "asc" }],
       select: {
-        id: true,
-        name: true,
-        email: true,
         role: true,
-        createdAt: true,
-        _count: {
-          select: {
-            responses: true,
-            createdEvents: true,
-          },
-        },
       },
     }),
   ]);
@@ -134,7 +113,6 @@ export async function getBoardPayload(viewer: SessionUser | null): Promise<Board
   const snapshot = await getDashboardSnapshot();
   const now = snapshot.now;
   const canSeeAttendees = canManageEvents(viewer?.role);
-  const canSeeMembers = canManageMembers(viewer?.role);
 
   const events = snapshot.events.map<BoardEvent>((event) => {
     const going = event.responses.filter((response) => response.status === RSVPStatus.GOING).length;
@@ -213,16 +191,5 @@ export async function getBoardPayload(viewer: SessionUser | null): Promise<Board
     },
     spotlight: upcomingEvents[0] ?? events[0] ?? null,
     events,
-    members: canSeeMembers
-      ? snapshot.users.map((user) => ({
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          createdAt: user.createdAt.toISOString(),
-          responsesCount: user._count.responses,
-          createdEventsCount: user._count.createdEvents,
-        }))
-      : [],
   };
 }

@@ -35,7 +35,6 @@ export function formatEventDateRange(startAt: string, endAt: string) {
 
   return {
     day: format(start, "d MMMM", { locale: ru }),
-    weekDay: format(start, "EEEE", { locale: ru }),
     time: `${format(start, "HH:mm")} - ${format(end, "HH:mm")}`,
   };
 }

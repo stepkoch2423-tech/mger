@@ -16,7 +16,7 @@ const robotoCondensed = Roboto_Condensed({
 export const metadata: Metadata = {
   title: "Молодая гвардия — доска мероприятий",
   description:
-    "Календарь мероприятий Молодой гвардии с регистрацией, ролями модераторов и отметками участия.",
+    "Календарь мероприятий Молодой гвардии с ролями модераторов и отметками участия.",
 };
 
 export default function RootLayout({
@@ -28,6 +28,7 @@ export default function RootLayout({
     <html
       lang="ru"
       className={`${manrope.variable} ${robotoCondensed.variable} h-full antialiased`}
+      data-scroll-behavior="smooth"
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

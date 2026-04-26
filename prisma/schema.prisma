@@ -23,6 +23,16 @@ model User {
   email         String          @unique
   passwordHash  String
   role          Role            @default(ACTIVIST)
+  firstName     String?
+  lastName      String?
+  patronymic    String?
+  birthYear     Int?
+  education     String?
+  about         String?
+  achievements  String?
+  headquarters  String?
+  avatarUrl     String?
+  isBlocked     Boolean         @default(false)
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   sessions      Session[]

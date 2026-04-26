@@ -31,6 +31,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Пользователь не найден." }, { status: 404 });
     }
 
+    if (user.isBlocked) {
+      return NextResponse.json(
+        { error: "Профиль заблокирован. Обратитесь к администратору штаба." },
+        { status: 403 },
+      );
+    }
+
     const isValidPassword = await compare(parsed.data.password, user.passwordHash);
 
     if (!isValidPassword) {
@@ -44,6 +51,7 @@ export async function POST(request: Request) {
         name: user.name,
         email: user.email,
         role: user.role,
+        avatarUrl: user.avatarUrl,
       },
     });
 

@@ -12,6 +12,9 @@
 
 # testing
 /coverage
+/playwright-report
+/test-results
+/.playwright-mcp
 
 # next.js
 /.next/
@@ -20,6 +23,8 @@
 # production
 /build
 /output/
+/dev.db
+/dev.db-journal
 *.db-shm
 *.db-wal
 
@@ -45,3 +50,7 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# runtime uploads
+/public/uploads/*
+!/public/uploads/.gitkeep

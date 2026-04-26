@@ -1,8 +1,8 @@
 import "dotenv/config";
-import { addDays, addHours, set } from "date-fns";
+import { addDays, set } from "date-fns";
 import { hash } from "bcryptjs";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import { PrismaClient, Role, RSVPStatus } from "@prisma/client";
+import { PrismaClient, Role } from "@prisma/client";
 
 const adapter = new PrismaBetterSqlite3({
   url: process.env.DATABASE_URL ?? "file:./dev.db",
@@ -28,57 +28,120 @@ async function main() {
   await prisma.session.deleteMany();
   await prisma.user.deleteMany();
 
-  const defaultPassword = process.env.OWNER_PASSWORD ?? "molodaya2026";
-  const ownerEmail = process.env.OWNER_EMAIL ?? "owner@mger.local";
-
-  const [ownerPassword, moderatorPassword, activistPassword] = await Promise.all([
-    hash(defaultPassword, 10),
-    hash("moderator2026", 10),
-    hash("aktivist2026", 10),
-  ]);
+  const defaultPassword = process.env.OWNER_PASSWORD ?? "mger-admin-2026";
+  const ownerEmail = process.env.OWNER_EMAIL ?? "admin@mger.local";
+  const ownerPassword = await hash(defaultPassword, 10);
+  const activistPassword = await hash(process.env.ACTIVIST_PASSWORD ?? "mger-activist-2026", 10);
+  const moderatorPassword = await hash(process.env.MODERATOR_PASSWORD ?? "mger-moderator-2026", 10);
 
   const owner = await prisma.user.create({
     data: {
-      name: "Штаб МГЕР",
+      name: "Главный администратор МГЕР",
       email: ownerEmail,
       passwordHash: ownerPassword,
       role: Role.OWNER,
+      firstName: "Александр",
+      lastName: "Соколов",
+      patronymic: "Игоревич",
+      birthYear: 1992,
+      education: "Казанский федеральный университет, управление проектами",
+      headquarters: "Региональный штаб Татарстана",
+      about: "Координирует календарь, модераторов и городские акции штаба.",
+      achievements: "Запустил систему штабных мероприятий и волонтёрских смен.",
+      avatarUrl: "/photos/event-kazan.png",
     },
   });
 
   const moderator = await prisma.user.create({
     data: {
       name: "Мария Кузнецова",
-      email: "moderator@mger.local",
+      email: process.env.MODERATOR_EMAIL ?? "moderator@mger.local",
       passwordHash: moderatorPassword,
       role: Role.MODERATOR,
+      firstName: "Мария",
+      lastName: "Кузнецова",
+      patronymic: "Андреевна",
+      birthYear: 1998,
+      education: "Молодёжный центр, координатор добровольцев",
+      headquarters: "Городской штаб Казани",
+      about: "Отвечает за набор команд, фотоотчёты и сопровождение новичков.",
+      achievements: "Собрала 12 волонтёрских смен за весенний сезон.",
+      avatarUrl: "/photos/event-tuapse.png",
     },
   });
 
   const activist = await prisma.user.create({
     data: {
-      name: "Алексей Волков",
-      email: "aktivist@mger.local",
+      name: "Активист штаба МГЕР",
+      email: process.env.ACTIVIST_EMAIL ?? "activist@mger.local",
       passwordHash: activistPassword,
       role: Role.ACTIVIST,
+      firstName: "Илья",
+      lastName: "Морозов",
+      patronymic: "Сергеевич",
+      birthYear: 2004,
+      education: "КНИТУ-КАИ, студент 3 курса",
+      headquarters: "Студенческий штаб",
+      about: "Помогает на патриотических акциях и гуманитарных сборах.",
+      achievements: "Участвовал в 8 мероприятиях и ведёт фотоархив команды.",
+      avatarUrl: "/photos/event-mariupol.png",
     },
   });
 
-  const secondActivist = await prisma.user.create({
-    data: {
-      name: "Арина Смирнова",
-      email: "arina@mger.local",
-      passwordHash: activistPassword,
-      role: Role.ACTIVIST,
-    },
+  await prisma.user.createMany({
+    data: [
+      {
+        name: "Анна Волкова",
+        email: "anna.volkova@mger.local",
+        passwordHash: activistPassword,
+        role: Role.ACTIVIST,
+        firstName: "Анна",
+        lastName: "Волкова",
+        birthYear: 2002,
+        education: "Колледж культуры, медиаволонтёр",
+        headquarters: "Медиа-штаб",
+        about: "Снимает короткие ролики и помогает с публикациями после мероприятий.",
+        achievements: "Подготовила серию карточек ко Дню Победы.",
+        avatarUrl: "/photos/event-kazan.png",
+      },
+      {
+        name: "Рустам Галиев",
+        email: "rustam.galiev@mger.local",
+        passwordHash: activistPassword,
+        role: Role.ACTIVIST,
+        firstName: "Рустам",
+        lastName: "Галиев",
+        birthYear: 2001,
+        education: "Работает в городском молодёжном центре",
+        headquarters: "Оперативный штаб",
+        about: "Помогает с логистикой, списками участников и выдачей материалов.",
+        achievements: "Организовал склад гуманитарной помощи на 300 коробок.",
+        avatarUrl: "/photos/event-tuapse.png",
+      },
+      {
+        name: "Олег Никитин",
+        email: "oleg.nikitin@mger.local",
+        passwordHash: activistPassword,
+        role: Role.ACTIVIST,
+        firstName: "Олег",
+        lastName: "Никитин",
+        birthYear: 1999,
+        education: "Волонтёр городских патриотических проектов",
+        headquarters: "Резерв штаба",
+        about: "Профиль временно заблокирован для проверки модерации.",
+        achievements: "Помогал на выездных мероприятиях.",
+        avatarUrl: "/photos/event-mariupol.png",
+        isBlocked: true,
+      },
+    ],
   });
 
-  const events = await Promise.all([
+  await Promise.all([
     prisma.event.create({
       data: {
         title: "Георгиевская лента на набережной",
         summary:
-          "Выезд волонтеров на городскую акцию с раздачей лент, фотозоной и точкой записи новых активистов.",
+          "Выезд волонтёров на городскую акцию с раздачей лент, фотозоной и координацией команды на месте.",
         description:
           "Собираем команду для городской акции на набережной. Будут дежурства по встрече гостей, фотосопровождение, раздача лент и короткий инструктаж для новых участников. Возьмите ветровку и заряженный телефон.",
         location: "Казань, Кремлёвская набережная",
@@ -135,7 +198,7 @@ async function main() {
         summary:
           "Фасовка гуманитарной помощи, логистика коробок и подготовка коротких видеосводок для соцсетей.",
         description:
-          "Работаем сменами по два часа. Внутри пространства будут организованы стол регистрации, упаковочная линия и зона выдачи. Можно выбрать удобную смену и взять друзей с собой после регистрации.",
+          "Работаем сменами по два часа. Внутри пространства будут организованы координационный стол, упаковочная линия и зона выдачи. Смены распределяет администратор штаба после входа в систему.",
         location: "Туапсе, молодёжный центр",
         category: "Гуманитарная миссия",
         organizerName: "Оперативный штаб",
@@ -154,62 +217,23 @@ async function main() {
         },
       },
     }),
-    prisma.event.create({
-      data: {
-        title: "Школа модераторов и координаторов",
-        summary:
-          "Закрытая практическая встреча для будущих модераторов: сценарии, чек-листы, управление фотоотчётом и регистрацией.",
-        description:
-          "Разберём, как собирать событие под ключ: от анонса до фотоотчёта и аналитики по присутствию. После встречи владелец приложения сможет назначать новых модераторов прямо из штаба.",
-        location: "Москва, центральный штаб",
-        category: "Обучение",
-        organizerName: "Федеральный штаб",
-        startAt: buildDate(14, 18, 30),
-        endAt: addHours(buildDate(14, 18, 30), 3),
-        capacity: 20,
-        createdById: owner.id,
-        photos: {
-          create: [
-            {
-              url: "/photos/event-kazan.png",
-              alt: "Встреча команды координаторов",
-              sortOrder: 0,
-            },
-          ],
-        },
-      },
-    }),
   ]);
 
-  await prisma.eventResponse.createMany({
-    data: [
-      {
-        eventId: events[0].id,
-        userId: activist.id,
-        status: RSVPStatus.GOING,
-      },
-      {
-        eventId: events[0].id,
-        userId: secondActivist.id,
-        status: RSVPStatus.GOING,
-      },
-      {
-        eventId: events[1].id,
-        userId: activist.id,
-        status: RSVPStatus.DECLINED,
-      },
-      {
-        eventId: events[2].id,
-        userId: secondActivist.id,
-        status: RSVPStatus.GOING,
-      },
-      {
-        eventId: events[3].id,
-        userId: moderator.id,
-        status: RSVPStatus.GOING,
-      },
-    ],
+  const firstEvent = await prisma.event.findFirst({
+    where: {
+      title: "Георгиевская лента на набережной",
+    },
   });
+
+  if (firstEvent) {
+    await prisma.eventResponse.create({
+      data: {
+        eventId: firstEvent.id,
+        userId: activist.id,
+        status: "GOING",
+      },
+    });
+  }
 }
 
 main()
