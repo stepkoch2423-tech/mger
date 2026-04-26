@@ -12,6 +12,8 @@ const prisma = new PrismaClient({
   adapter,
 });
 
+const seedProfile = process.env.SEED_PROFILE ?? "demo";
+
 function buildDate(offsetDays: number, hours: number, minutes = 0) {
   return set(addDays(new Date(), offsetDays), {
     hours,
@@ -32,26 +34,58 @@ async function main() {
   const ownerEmail = process.env.OWNER_EMAIL ?? "admin@mger.local";
   const ownerPassword = await hash(defaultPassword, 10);
   const activistPassword = await hash(process.env.ACTIVIST_PASSWORD ?? "mger-activist-2026", 10);
-  const moderatorPassword = await hash(process.env.MODERATOR_PASSWORD ?? "mger-moderator-2026", 10);
 
   const owner = await prisma.user.create({
     data: {
-      name: "Главный администратор МГЕР",
+      name: process.env.OWNER_NAME ?? "Главный администратор МГЕР",
       email: ownerEmail,
       passwordHash: ownerPassword,
       role: Role.OWNER,
-      firstName: "Александр",
-      lastName: "Соколов",
-      patronymic: "Игоревич",
-      birthYear: 1992,
-      education: "Казанский федеральный университет, управление проектами",
-      headquarters: "Региональный штаб Татарстана",
-      about: "Координирует календарь, модераторов и городские акции штаба.",
-      achievements: "Запустил систему штабных мероприятий и волонтёрских смен.",
-      avatarUrl: "/photos/event-kazan.png",
+      firstName: process.env.OWNER_FIRST_NAME ?? "Александр",
+      lastName: process.env.OWNER_LAST_NAME ?? "Соколов",
+      patronymic: process.env.OWNER_PATRONYMIC ?? "Игоревич",
+      birthYear: Number(process.env.OWNER_BIRTH_YEAR ?? 1992),
+      education:
+        process.env.OWNER_EDUCATION ??
+        "Казанский федеральный университет, управление проектами",
+      headquarters: process.env.OWNER_HEADQUARTERS ?? "Региональный штаб Татарстана",
+      about:
+        process.env.OWNER_ABOUT ??
+        "Координирует календарь, модераторов и городские акции штаба.",
+      achievements:
+        process.env.OWNER_ACHIEVEMENTS ??
+        "Запустил систему штабных мероприятий и волонтёрских смен.",
+      avatarUrl: process.env.OWNER_AVATAR_URL ?? "/photos/event-kazan.png",
     },
   });
 
+  const activist = await prisma.user.create({
+    data: {
+      name: process.env.ACTIVIST_NAME ?? "Активист штаба МГЕР",
+      email: process.env.ACTIVIST_EMAIL ?? "activist@mger.local",
+      passwordHash: activistPassword,
+      role: Role.ACTIVIST,
+      firstName: process.env.ACTIVIST_FIRST_NAME ?? "Илья",
+      lastName: process.env.ACTIVIST_LAST_NAME ?? "Морозов",
+      patronymic: process.env.ACTIVIST_PATRONYMIC ?? "Сергеевич",
+      birthYear: Number(process.env.ACTIVIST_BIRTH_YEAR ?? 2004),
+      education: process.env.ACTIVIST_EDUCATION ?? "КНИТУ-КАИ, студент 3 курса",
+      headquarters: process.env.ACTIVIST_HEADQUARTERS ?? "Студенческий штаб",
+      about:
+        process.env.ACTIVIST_ABOUT ??
+        "Помогает на патриотических акциях и гуманитарных сборах.",
+      achievements:
+        process.env.ACTIVIST_ACHIEVEMENTS ??
+        "Участвовал в 8 мероприятиях и ведёт фотоархив команды.",
+      avatarUrl: process.env.ACTIVIST_AVATAR_URL ?? "/photos/event-mariupol.png",
+    },
+  });
+
+  if (seedProfile !== "demo") {
+    return;
+  }
+
+  const moderatorPassword = await hash(process.env.MODERATOR_PASSWORD ?? "mger-moderator-2026", 10);
   const moderator = await prisma.user.create({
     data: {
       name: "Мария Кузнецова",
@@ -67,24 +101,6 @@ async function main() {
       about: "Отвечает за набор команд, фотоотчёты и сопровождение новичков.",
       achievements: "Собрала 12 волонтёрских смен за весенний сезон.",
       avatarUrl: "/photos/event-tuapse.png",
-    },
-  });
-
-  const activist = await prisma.user.create({
-    data: {
-      name: "Активист штаба МГЕР",
-      email: process.env.ACTIVIST_EMAIL ?? "activist@mger.local",
-      passwordHash: activistPassword,
-      role: Role.ACTIVIST,
-      firstName: "Илья",
-      lastName: "Морозов",
-      patronymic: "Сергеевич",
-      birthYear: 2004,
-      education: "КНИТУ-КАИ, студент 3 курса",
-      headquarters: "Студенческий штаб",
-      about: "Помогает на патриотических акциях и гуманитарных сборах.",
-      achievements: "Участвовал в 8 мероприятиях и ведёт фотоархив команды.",
-      avatarUrl: "/photos/event-mariupol.png",
     },
   });
 

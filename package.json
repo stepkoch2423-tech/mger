@@ -11,7 +11,9 @@
     "db:init": "node scripts/init-sqlite.mjs",
     "db:seed": "tsx prisma/seed.ts",
     "prisma:generate": "prisma generate",
-    "setup": "npm run prisma:generate && npm run db:init && npm run db:seed"
+    "setup": "npm run prisma:generate && npm run db:init && npm run db:seed",
+    "render:bootstrap": "node scripts/render-bootstrap.mjs",
+    "render:start": "npm run render:bootstrap && npm run start"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.8.0",

@@ -25,6 +25,7 @@
 /output/
 /dev.db
 /dev.db-journal
+/render-data
 *.db-shm
 *.db-wal
 

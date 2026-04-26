@@ -1,0 +1,74 @@
+services:
+  - type: web
+    name: mger-board
+    runtime: node
+    plan: starter
+    autoDeploy: true
+    healthCheckPath: /
+    buildCommand: npm ci && npm run build
+    startCommand: npm run render:start
+    disk:
+      name: mger-data
+      mountPath: /opt/render/project/src/render-data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: 22.16.0
+      - key: DATABASE_URL
+        value: file:/opt/render/project/src/render-data/dev.db
+      - key: RENDER_STORAGE_PATH
+        value: /opt/render/project/src/render-data
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SEED_PROFILE
+        value: render
+      - key: RESET_DATABASE_ON_BOOT
+        value: false
+      - key: OWNER_EMAIL
+        value: admin@mger.local
+      - key: OWNER_PASSWORD
+        value: mger-admin-2026
+      - key: OWNER_NAME
+        value: Кусков Матвей Максимович
+      - key: OWNER_FIRST_NAME
+        value: Матвей
+      - key: OWNER_LAST_NAME
+        value: Кусков
+      - key: OWNER_PATRONYMIC
+        value: Максимович
+      - key: OWNER_BIRTH_YEAR
+        value: "2001"
+      - key: OWNER_EDUCATION
+        value: Руководитель проекта МГЕР
+      - key: OWNER_HEADQUARTERS
+        value: Центральный штаб
+      - key: OWNER_ABOUT
+        value: Администрирует доску мероприятий и управляет ролями участников.
+      - key: OWNER_ACHIEVEMENTS
+        value: Настроил production-версию доски мероприятий на Render.
+      - key: OWNER_AVATAR_URL
+        value: /photos/event-kazan.png
+      - key: ACTIVIST_EMAIL
+        value: activist@mger.local
+      - key: ACTIVIST_PASSWORD
+        value: mger-activist-2026
+      - key: ACTIVIST_NAME
+        value: Карямин Кирилл Николаевич
+      - key: ACTIVIST_FIRST_NAME
+        value: Кирилл
+      - key: ACTIVIST_LAST_NAME
+        value: Карямин
+      - key: ACTIVIST_PATRONYMIC
+        value: Николаевич
+      - key: ACTIVIST_BIRTH_YEAR
+        value: "2004"
+      - key: ACTIVIST_EDUCATION
+        value: Активист регионального штаба
+      - key: ACTIVIST_HEADQUARTERS
+        value: Региональный штаб
+      - key: ACTIVIST_ABOUT
+        value: Использует доску для откликов, участия в акциях и работы с календарём.
+      - key: ACTIVIST_ACHIEVEMENTS
+        value: Тестирует production-версию приложения и отклики на мероприятия.
+      - key: ACTIVIST_AVATAR_URL
+        value: /photos/event-tuapse.png
