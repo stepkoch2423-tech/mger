@@ -4,7 +4,7 @@ import { type FormEvent, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, KeyRound, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ShieldCheck, UserRoundPlus } from "lucide-react";
 import { BrandLockup } from "@/components/shared/brand-lockup";
 import {
   formInputClass as inputClass,
@@ -20,7 +20,7 @@ function normalizeReturnTo(value: string | null) {
   return value;
 }
 
-export function LoginScreen() {
+export function RegisterScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [pending, setPending] = useState(false);
@@ -38,11 +38,13 @@ export function LoginScreen() {
 
     const formData = new FormData(event.currentTarget);
     const payload = {
+      name: `${formData.get("name") ?? ""}`.trim(),
       email: `${formData.get("email") ?? ""}`.trim(),
       password: `${formData.get("password") ?? ""}`,
+      passwordConfirm: `${formData.get("passwordConfirm") ?? ""}`,
     };
 
-    const response = await fetch("/api/auth/login", {
+    const response = await fetch("/api/auth/register", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -53,7 +55,7 @@ export function LoginScreen() {
     const data = (await response.json()) as { error?: string };
 
     if (!response.ok) {
-      setError(data.error ?? "Не удалось выполнить вход.");
+      setError(data.error ?? "Не удалось создать профиль.");
       setPending(false);
       return;
     }
@@ -81,24 +83,24 @@ export function LoginScreen() {
               <div className="flex items-center justify-between gap-3">
                 <BrandLockup variant="login" priority />
                 <Link
-                  href="/"
+                  href="/login"
                   className="inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/[0.08] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/[0.14]"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  Назад
+                  Войти
                 </Link>
               </div>
 
               <div className="max-w-2xl">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-white/68">
-                  Доступ в штаб
+                  Новый доступ
                 </p>
                 <h1 className="mt-3 font-display text-[3rem] uppercase leading-[0.9] tracking-tight text-white sm:text-[4rem]">
-                  Вход в профиль
+                  Регистрация активиста
                 </h1>
                 <p className="mt-3 max-w-xl text-base leading-7 text-white/84">
-                  Доступ создаёт администратор штаба. После входа можно отмечать участие,
-                  редактировать события и управлять рабочей доской в зависимости от роли.
+                  Создайте профиль, чтобы сохранять участие в мероприятиях и работать с личной
+                  карточкой. Новые пользователи получают роль активиста.
                 </p>
               </div>
             </div>
@@ -107,43 +109,74 @@ export function LoginScreen() {
           <section className="panel-surface surface-panel flex rounded-[2rem] p-5 sm:p-6">
             <div className="m-auto w-full max-w-sm">
               <div className="inline-flex h-12 w-12 items-center justify-center rounded-[1rem] border border-white/10 bg-white/[0.04] text-white">
-                <KeyRound className="h-5 w-5" />
+                <UserRoundPlus className="h-5 w-5" />
               </div>
               <h2 className="mt-5 font-display text-[2.2rem] uppercase tracking-tight text-white">
-                Войти в систему
+                Создать профиль
               </h2>
               <p className="mt-2 text-sm leading-6 text-[#92a6cc]">
-                Используйте данные, которые выдал главный администратор.
+                Данные сохраняются в подключенной PostgreSQL-базе. После регистрации вы сразу
+                попадёте на доску мероприятий.
               </p>
 
               <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
                 <div>
-                  <label htmlFor="login-email" className={labelClass}>
-                    Email
+                  <label htmlFor="register-name" className={labelClass}>
+                    ФИО или имя
                   </label>
                   <input
-                    id="login-email"
-                    name="email"
-                    type="email"
+                    id="register-name"
+                    name="name"
+                    type="text"
                     disabled={pending}
                     className={inputClass}
-                    autoComplete="username"
-                    placeholder="admin@mger.local"
+                    autoComplete="name"
+                    placeholder="Иван Иванов"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="login-password" className={labelClass}>
+                  <label htmlFor="register-email" className={labelClass}>
+                    Email
+                  </label>
+                  <input
+                    id="register-email"
+                    name="email"
+                    type="email"
+                    disabled={pending}
+                    className={inputClass}
+                    autoComplete="email"
+                    placeholder="name@example.com"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="register-password" className={labelClass}>
                     Пароль
                   </label>
                   <input
-                    id="login-password"
+                    id="register-password"
                     name="password"
                     type="password"
                     disabled={pending}
                     className={inputClass}
-                    autoComplete="current-password"
-                    placeholder="Введите пароль"
+                    autoComplete="new-password"
+                    placeholder="Минимум 8 символов"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="register-password-confirm" className={labelClass}>
+                    Повтор пароля
+                  </label>
+                  <input
+                    id="register-password-confirm"
+                    name="passwordConfirm"
+                    type="password"
+                    disabled={pending}
+                    className={inputClass}
+                    autoComplete="new-password"
+                    placeholder="Повторите пароль"
                   />
                 </div>
 
@@ -159,16 +192,9 @@ export function LoginScreen() {
                   aria-busy={pending}
                   className="w-full rounded-full bg-[var(--mger-red)] px-5 py-4 text-sm font-semibold text-white transition hover:bg-[#ff3245] disabled:cursor-wait disabled:opacity-70"
                 >
-                  {pending ? <InlineLoader label="Входим" /> : "Войти"}
+                  {pending ? <InlineLoader label="Создаём" /> : "Зарегистрироваться"}
                 </button>
               </form>
-
-              <Link
-                href="/register"
-                className="mt-4 inline-flex w-full items-center justify-center rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.08]"
-              >
-                Зарегистрироваться свободно
-              </Link>
 
               <div className="mt-4 rounded-[1.3rem] border border-white/8 bg-white/[0.03] px-4 py-4 text-sm leading-6 text-[#93a7cb]">
                 <div className="flex items-start gap-3">
@@ -176,8 +202,11 @@ export function LoginScreen() {
                     <ShieldCheck className="h-4 w-4" />
                   </span>
                   <p>
-                    Если нужен новый доступ, главный администратор создаёт его вручную и
-                    сразу назначает нужную роль.
+                    Уже есть профиль?{" "}
+                    <Link href="/login" className="font-semibold text-white underline-offset-4 hover:underline">
+                      Войти в систему
+                    </Link>
+                    .
                   </p>
                 </div>
               </div>
