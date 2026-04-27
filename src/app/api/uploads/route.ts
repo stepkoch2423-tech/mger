@@ -1,32 +1,27 @@
 import { randomUUID } from "crypto";
-import { mkdir, writeFile } from "fs/promises";
-import { extname, join } from "path";
+import { put } from "@vercel/blob";
 import { NextResponse } from "next/server";
+import sharp from "sharp";
 import { getCurrentUser } from "@/lib/auth/session";
 import { READ_ONLY_DEPLOYMENT_MESSAGE, isReadOnlyDeployment } from "@/lib/deployment";
 
-const MAX_FILE_SIZE = 8 * 1024 * 1024;
+const MAX_FILE_SIZE = 12 * 1024 * 1024;
+const MAX_IMAGE_EDGE = 1600;
+const IMAGE_QUALITY = 78;
 
-function normalizeExtension(file: File) {
-  const explicit = extname(file.name);
+async function compressImage(file: File) {
+  const source = Buffer.from(await file.arrayBuffer());
 
-  if (explicit) {
-    return explicit.toLowerCase();
-  }
-
-  if (file.type === "image/png") {
-    return ".png";
-  }
-
-  if (file.type === "image/webp") {
-    return ".webp";
-  }
-
-  if (file.type === "image/jpeg") {
-    return ".jpg";
-  }
-
-  return ".bin";
+  return sharp(source)
+    .rotate()
+    .resize({
+      width: MAX_IMAGE_EDGE,
+      height: MAX_IMAGE_EDGE,
+      fit: "inside",
+      withoutEnlargement: true,
+    })
+    .webp({ quality: IMAGE_QUALITY, effort: 4 })
+    .toBuffer();
 }
 
 export async function POST(request: Request) {
@@ -48,7 +43,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Фотографии не выбраны." }, { status: 400 });
     }
 
-    await mkdir(join(process.cwd(), "public", "uploads"), { recursive: true });
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      return NextResponse.json(
+        { error: "Файловое хранилище Vercel Blob не подключено." },
+        { status: 503 },
+      );
+    }
 
     const urls = await Promise.all(
       files.map(async (file) => {
@@ -57,15 +57,17 @@ export async function POST(request: Request) {
         }
 
         if (file.size > MAX_FILE_SIZE) {
-          throw new Error("Одна из фотографий превышает 8 МБ.");
+          throw new Error("Одна из фотографий превышает 12 МБ.");
         }
 
-        const fileName = `${randomUUID()}${normalizeExtension(file)}`;
-        const destination = join(process.cwd(), "public", "uploads", fileName);
-        const bytes = await file.arrayBuffer();
+        const compressedImage = await compressImage(file);
+        const fileName = `uploads/${randomUUID()}.webp`;
+        const blob = await put(fileName, compressedImage, {
+          access: "public",
+          contentType: "image/webp",
+        });
 
-        await writeFile(destination, Buffer.from(bytes));
-        return `/uploads/${fileName}`;
+        return blob.url;
       }),
     );
 

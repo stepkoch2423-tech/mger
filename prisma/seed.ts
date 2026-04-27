@@ -52,24 +52,21 @@ async function main() {
   await prisma.session.deleteMany();
   await prisma.user.deleteMany();
 
-  const defaultPassword = process.env.OWNER_PASSWORD ?? "mger-admin-2026";
-  const ownerEmail = process.env.OWNER_EMAIL ?? "admin@mger.local";
-  const ownerPassword = await hash(defaultPassword, 10);
-  const activistPassword = await hash(process.env.ACTIVIST_PASSWORD ?? "mger-activist-2026", 10);
+  const ownerPassword = await hash(process.env.OWNER_PASSWORD ?? "mger-admin-2026", 10);
 
   const owner = await prisma.user.create({
     data: {
-      name: process.env.OWNER_NAME ?? "Кусков Матвей Максимович",
-      email: ownerEmail,
+      name: process.env.OWNER_NAME ?? "Кочетков Степан Дмитриевич",
+      email: process.env.OWNER_EMAIL ?? "admin@mger.local",
       passwordHash: ownerPassword,
       role: Role.OWNER,
-      firstName: process.env.OWNER_FIRST_NAME ?? "Матвей",
-      lastName: process.env.OWNER_LAST_NAME ?? "Кусков",
-      patronymic: process.env.OWNER_PATRONYMIC ?? "Максимович",
+      firstName: process.env.OWNER_FIRST_NAME ?? "Степан",
+      lastName: process.env.OWNER_LAST_NAME ?? "Кочетков",
+      patronymic: process.env.OWNER_PATRONYMIC ?? "Дмитриевич",
       birthYear: Number(process.env.OWNER_BIRTH_YEAR ?? 2001),
       education:
         process.env.OWNER_EDUCATION ??
-        "Руководитель проекта МГЕР",
+        "Администратор штаба МГЕР",
       headquarters: process.env.OWNER_HEADQUARTERS ?? "Центральный штаб",
       about:
         process.env.OWNER_ABOUT ??
@@ -81,98 +78,73 @@ async function main() {
     },
   });
 
-  const activist = await prisma.user.create({
-    data: {
-      name: process.env.ACTIVIST_NAME ?? "Карямин Кирилл Николаевич",
-      email: process.env.ACTIVIST_EMAIL ?? "activist@mger.local",
-      passwordHash: activistPassword,
-      role: Role.ACTIVIST,
-      firstName: process.env.ACTIVIST_FIRST_NAME ?? "Кирилл",
-      lastName: process.env.ACTIVIST_LAST_NAME ?? "Карямин",
-      patronymic: process.env.ACTIVIST_PATRONYMIC ?? "Николаевич",
-      birthYear: Number(process.env.ACTIVIST_BIRTH_YEAR ?? 2004),
-      education: process.env.ACTIVIST_EDUCATION ?? "Активист регионального штаба",
-      headquarters: process.env.ACTIVIST_HEADQUARTERS ?? "Региональный штаб",
-      about:
-        process.env.ACTIVIST_ABOUT ??
-        "Использует доску для просмотра календаря и участия в мероприятиях.",
-      achievements:
-        process.env.ACTIVIST_ACHIEVEMENTS ??
-        "Тестирует production-сценарии отклика на мероприятия.",
-      avatarUrl: process.env.ACTIVIST_AVATAR_URL ?? "/photos/event-mariupol.png",
+  const activistAccounts = [
+    {
+      name: "Анастасия Русанова",
+      email: "anastasia.rusanova@mger.local",
+      password: "rusanova-2026",
+      firstName: "Анастасия",
+      lastName: "Русанова",
+      avatarUrl: "/photos/event-kazan.png",
     },
-  });
+    {
+      name: "Маша Лапина",
+      email: "masha.lapina@mger.local",
+      password: "lapina-2026",
+      firstName: "Маша",
+      lastName: "Лапина",
+      avatarUrl: "/photos/event-tuapse.png",
+    },
+    {
+      name: "Анастасия Ярцева",
+      email: "anastasia.yartseva@mger.local",
+      password: "yartseva-2026",
+      firstName: "Анастасия",
+      lastName: "Ярцева",
+      avatarUrl: "/photos/event-mariupol.png",
+    },
+    {
+      name: "Антон Хайлов",
+      email: "anton.hailov@mger.local",
+      password: "hailov-2026",
+      firstName: "Антон",
+      lastName: "Хайлов",
+      avatarUrl: "/photos/event-kazan.png",
+    },
+    {
+      name: "Алексей Папин",
+      email: "alexey.papin@mger.local",
+      password: "papin-2026",
+      firstName: "Алексей",
+      lastName: "Папин",
+      avatarUrl: "/photos/event-tuapse.png",
+    },
+  ];
+
+  const activists = await Promise.all(
+    activistAccounts.map(async (account) =>
+      prisma.user.create({
+        data: {
+          name: account.name,
+          email: account.email,
+          passwordHash: await hash(account.password, 10),
+          role: Role.ACTIVIST,
+          firstName: account.firstName,
+          lastName: account.lastName,
+          birthYear: 2004,
+          education: "Активист штаба МГЕР",
+          headquarters: "Региональный штаб",
+          about: "Использует доску для просмотра календаря и участия в мероприятиях.",
+          achievements: "Участвует в работе штаба и мероприятиях команды.",
+          avatarUrl: account.avatarUrl,
+        },
+      }),
+    ),
+  );
 
   if (seedProfile !== "demo") {
     return;
   }
-
-  const moderatorPassword = await hash(process.env.MODERATOR_PASSWORD ?? "mger-moderator-2026", 10);
-  const moderator = await prisma.user.create({
-    data: {
-      name: "Мария Кузнецова",
-      email: process.env.MODERATOR_EMAIL ?? "moderator@mger.local",
-      passwordHash: moderatorPassword,
-      role: Role.MODERATOR,
-      firstName: "Мария",
-      lastName: "Кузнецова",
-      patronymic: "Андреевна",
-      birthYear: 1998,
-      education: "Молодёжный центр, координатор добровольцев",
-      headquarters: "Городской штаб Казани",
-      about: "Отвечает за набор команд, фотоотчёты и сопровождение новичков.",
-      achievements: "Собрала 12 волонтёрских смен за весенний сезон.",
-      avatarUrl: "/photos/event-tuapse.png",
-    },
-  });
-
-  await prisma.user.createMany({
-    data: [
-      {
-        name: "Анна Волкова",
-        email: "anna.volkova@mger.local",
-        passwordHash: activistPassword,
-        role: Role.ACTIVIST,
-        firstName: "Анна",
-        lastName: "Волкова",
-        birthYear: 2002,
-        education: "Колледж культуры, медиаволонтёр",
-        headquarters: "Медиа-штаб",
-        about: "Снимает короткие ролики и помогает с публикациями после мероприятий.",
-        achievements: "Подготовила серию карточек ко Дню Победы.",
-        avatarUrl: "/photos/event-kazan.png",
-      },
-      {
-        name: "Рустам Галиев",
-        email: "rustam.galiev@mger.local",
-        passwordHash: activistPassword,
-        role: Role.ACTIVIST,
-        firstName: "Рустам",
-        lastName: "Галиев",
-        birthYear: 2001,
-        education: "Работает в городском молодёжном центре",
-        headquarters: "Оперативный штаб",
-        about: "Помогает с логистикой, списками участников и выдачей материалов.",
-        achievements: "Организовал склад гуманитарной помощи на 300 коробок.",
-        avatarUrl: "/photos/event-tuapse.png",
-      },
-      {
-        name: "Олег Никитин",
-        email: "oleg.nikitin@mger.local",
-        passwordHash: activistPassword,
-        role: Role.ACTIVIST,
-        firstName: "Олег",
-        lastName: "Никитин",
-        birthYear: 1999,
-        education: "Волонтёр городских патриотических проектов",
-        headquarters: "Резерв штаба",
-        about: "Профиль временно заблокирован для проверки модерации.",
-        achievements: "Помогал на выездных мероприятиях.",
-        avatarUrl: "/photos/event-mariupol.png",
-        isBlocked: true,
-      },
-    ],
-  });
 
   await Promise.all([
     prisma.event.create({
@@ -188,7 +160,7 @@ async function main() {
         startAt: buildDate(2, 16, 0),
         endAt: buildDate(2, 19, 0),
         capacity: 80,
-        createdById: moderator.id,
+        createdById: owner.id,
         photos: {
           create: [
             {
@@ -218,7 +190,7 @@ async function main() {
         startAt: buildDate(5, 11, 30),
         endAt: buildDate(5, 14, 0),
         capacity: 30,
-        createdById: moderator.id,
+        createdById: owner.id,
         photos: {
           create: [
             {
@@ -267,7 +239,7 @@ async function main() {
     await prisma.eventResponse.create({
       data: {
         eventId: firstEvent.id,
-        userId: activist.id,
+        userId: activists[0].id,
         status: RSVPStatus.GOING,
       },
     });
