@@ -7,6 +7,17 @@ import { PrismaClient, Role, RSVPStatus } from "@prisma/client";
 config({ path: ".env.local" });
 config();
 
+function normalizePostgresUrl(databaseUrl: string) {
+  const url = new URL(databaseUrl);
+  const sslMode = url.searchParams.get("sslmode");
+
+  if (sslMode === "prefer" || sslMode === "require" || sslMode === "verify-ca") {
+    url.searchParams.set("sslmode", "verify-full");
+  }
+
+  return url.toString();
+}
+
 const databaseUrl =
   process.env.DATABASE_URL ??
   process.env.PRISMA_DATABASE_URL ??
@@ -17,7 +28,7 @@ if (!databaseUrl) {
   throw new Error("DATABASE_URL is required to seed the PostgreSQL database.");
 }
 
-const adapter = new PrismaPg(databaseUrl);
+const adapter = new PrismaPg(normalizePostgresUrl(databaseUrl));
 
 const prisma = new PrismaClient({
   adapter,
