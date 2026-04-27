@@ -163,13 +163,6 @@ export function LoginScreen() {
                 </button>
               </form>
 
-              <Link
-                href="/register"
-                className="mt-4 inline-flex w-full items-center justify-center rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.08]"
-              >
-                Зарегистрироваться свободно
-              </Link>
-
               <div className="mt-4 rounded-[1.3rem] border border-white/8 bg-white/[0.03] px-4 py-4 text-sm leading-6 text-[#93a7cb]">
                 <div className="flex items-start gap-3">
                   <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[0.95rem] bg-white/[0.04] text-[#cbd8f4]">

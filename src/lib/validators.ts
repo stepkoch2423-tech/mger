@@ -25,18 +25,6 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Введите пароль."),
 });
 
-export const registerSchema = z
-  .object({
-    name: requiredText("Имя", 3).max(120, "Имя не должно быть длиннее 120 символов."),
-    email: z.email("Укажите корректный email.").transform((value) => value.toLowerCase()),
-    password: z.string().min(8, "Пароль должен содержать не меньше 8 символов."),
-    passwordConfirm: z.string().min(1, "Повторите пароль."),
-  })
-  .refine((value) => value.password === value.passwordConfirm, {
-    message: "Пароли не совпадают.",
-    path: ["passwordConfirm"],
-  });
-
 export const eventSchema = z
   .object({
     title: requiredText("Название"),
