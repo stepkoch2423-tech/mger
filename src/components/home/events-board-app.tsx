@@ -49,7 +49,7 @@ import {
 
 type ContentView = "calendar" | "list";
 type ActiveNavigation = "top" | "calendar";
-type NavigationAction = ActiveNavigation | "inactive";
+type NavigationAction = ActiveNavigation | "members" | "inactive";
 
 type FlashState =
   | {
@@ -74,6 +74,7 @@ const navigationItems: Array<{
 }> = [
   { icon: LayoutGrid, label: "Доска мероприятий", action: "top" },
   { icon: CalendarRange, label: "Календарь", action: "calendar" },
+  { icon: UsersRound, label: "Участники", action: "members" },
   { icon: Newspaper, label: "Новости", action: "inactive" },
   { icon: ImageIcon, label: "Галерея", action: "inactive" },
 ];
@@ -226,6 +227,11 @@ export function EventsBoardApp({
 
   function handleNavigation(action: NavigationAction) {
     if (action === "inactive") {
+      return;
+    }
+
+    if (action === "members") {
+      goToMembers();
       return;
     }
 
@@ -510,11 +516,6 @@ export function EventsBoardApp({
                   disabled={item.action === "inactive"}
                 />
               ))}
-              <SidebarNavButton
-                icon={UsersRound}
-                label="Участники"
-                onClick={goToMembers}
-              />
             </nav>
 
             <button
@@ -1016,10 +1017,6 @@ export function EventsBoardApp({
                 closeMobileMenu();
                 handleNavigation(action);
               }}
-              onOpenMembers={() => {
-                closeMobileMenu();
-                goToMembers();
-              }}
               onOpenProfile={() => {
                 closeMobileMenu();
                 goToProfile();
@@ -1082,7 +1079,6 @@ function MobileNavigationDrawer({
   activeNavigation,
   onClose,
   onNavigate,
-  onOpenMembers,
   onOpenProfile,
   onLogin,
   onLogout,
@@ -1091,8 +1087,7 @@ function MobileNavigationDrawer({
   currentUser: SessionUser | null;
   activeNavigation: ActiveNavigation;
   onClose: () => void;
-  onNavigate: (action: ActiveNavigation) => void;
-  onOpenMembers: () => void;
+  onNavigate: (action: NavigationAction) => void;
   onOpenProfile: () => void;
   onLogin: () => void;
   onLogout: () => void;
@@ -1140,7 +1135,6 @@ function MobileNavigationDrawer({
               disabled={item.action === "inactive"}
             />
           ))}
-          <SidebarNavButton icon={UsersRound} label="Участники" onClick={onOpenMembers} />
         </nav>
 
         <button

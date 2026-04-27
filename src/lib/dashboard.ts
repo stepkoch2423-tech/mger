@@ -2,6 +2,7 @@ import { addMonths, endOfMonth, startOfMonth, subMonths } from "date-fns";
 import { cache } from "react";
 import { RSVPStatus, Role } from "@prisma/client";
 import type { SessionUser } from "@/lib/auth/session";
+import { getDatabaseUrl } from "@/lib/deployment";
 import { canManageEvents } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { formatRussianPlural, toDateKey } from "@/lib/utils";
@@ -52,6 +53,15 @@ export type BoardPayload = {
 
 const getDashboardSnapshot = cache(async () => {
   const now = new Date();
+
+  if (!getDatabaseUrl()) {
+    return {
+      now,
+      events: [],
+      users: [],
+    };
+  }
+
   const rangeStart = startOfMonth(subMonths(now, 1));
   const rangeEnd = endOfMonth(addMonths(now, 2));
 

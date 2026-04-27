@@ -1,12 +1,20 @@
 import "dotenv/config";
 import { addDays, set } from "date-fns";
 import { hash } from "bcryptjs";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import { PrismaClient, Role } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient, Role, RSVPStatus } from "@prisma/client";
 
-const adapter = new PrismaBetterSqlite3({
-  url: process.env.DATABASE_URL ?? "file:./dev.db",
-});
+const databaseUrl =
+  process.env.DATABASE_URL ??
+  process.env.PRISMA_DATABASE_URL ??
+  process.env.POSTGRES_PRISMA_URL ??
+  process.env.POSTGRES_URL;
+
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL is required to seed the PostgreSQL database.");
+}
+
+const adapter = new PrismaPg(databaseUrl);
 
 const prisma = new PrismaClient({
   adapter,
@@ -37,46 +45,46 @@ async function main() {
 
   const owner = await prisma.user.create({
     data: {
-      name: process.env.OWNER_NAME ?? "Главный администратор МГЕР",
+      name: process.env.OWNER_NAME ?? "Кусков Матвей Максимович",
       email: ownerEmail,
       passwordHash: ownerPassword,
       role: Role.OWNER,
-      firstName: process.env.OWNER_FIRST_NAME ?? "Александр",
-      lastName: process.env.OWNER_LAST_NAME ?? "Соколов",
-      patronymic: process.env.OWNER_PATRONYMIC ?? "Игоревич",
-      birthYear: Number(process.env.OWNER_BIRTH_YEAR ?? 1992),
+      firstName: process.env.OWNER_FIRST_NAME ?? "Матвей",
+      lastName: process.env.OWNER_LAST_NAME ?? "Кусков",
+      patronymic: process.env.OWNER_PATRONYMIC ?? "Максимович",
+      birthYear: Number(process.env.OWNER_BIRTH_YEAR ?? 2001),
       education:
         process.env.OWNER_EDUCATION ??
-        "Казанский федеральный университет, управление проектами",
-      headquarters: process.env.OWNER_HEADQUARTERS ?? "Региональный штаб Татарстана",
+        "Руководитель проекта МГЕР",
+      headquarters: process.env.OWNER_HEADQUARTERS ?? "Центральный штаб",
       about:
         process.env.OWNER_ABOUT ??
-        "Координирует календарь, модераторов и городские акции штаба.",
+        "Администрирует доску мероприятий и управляет ролями участников.",
       achievements:
         process.env.OWNER_ACHIEVEMENTS ??
-        "Запустил систему штабных мероприятий и волонтёрских смен.",
+        "Подготовил production-версию доски мероприятий для штаба.",
       avatarUrl: process.env.OWNER_AVATAR_URL ?? "/photos/event-kazan.png",
     },
   });
 
   const activist = await prisma.user.create({
     data: {
-      name: process.env.ACTIVIST_NAME ?? "Активист штаба МГЕР",
+      name: process.env.ACTIVIST_NAME ?? "Карямин Кирилл Николаевич",
       email: process.env.ACTIVIST_EMAIL ?? "activist@mger.local",
       passwordHash: activistPassword,
       role: Role.ACTIVIST,
-      firstName: process.env.ACTIVIST_FIRST_NAME ?? "Илья",
-      lastName: process.env.ACTIVIST_LAST_NAME ?? "Морозов",
-      patronymic: process.env.ACTIVIST_PATRONYMIC ?? "Сергеевич",
+      firstName: process.env.ACTIVIST_FIRST_NAME ?? "Кирилл",
+      lastName: process.env.ACTIVIST_LAST_NAME ?? "Карямин",
+      patronymic: process.env.ACTIVIST_PATRONYMIC ?? "Николаевич",
       birthYear: Number(process.env.ACTIVIST_BIRTH_YEAR ?? 2004),
-      education: process.env.ACTIVIST_EDUCATION ?? "КНИТУ-КАИ, студент 3 курса",
-      headquarters: process.env.ACTIVIST_HEADQUARTERS ?? "Студенческий штаб",
+      education: process.env.ACTIVIST_EDUCATION ?? "Активист регионального штаба",
+      headquarters: process.env.ACTIVIST_HEADQUARTERS ?? "Региональный штаб",
       about:
         process.env.ACTIVIST_ABOUT ??
-        "Помогает на патриотических акциях и гуманитарных сборах.",
+        "Использует доску для просмотра календаря и участия в мероприятиях.",
       achievements:
         process.env.ACTIVIST_ACHIEVEMENTS ??
-        "Участвовал в 8 мероприятиях и ведёт фотоархив команды.",
+        "Тестирует production-сценарии отклика на мероприятия.",
       avatarUrl: process.env.ACTIVIST_AVATAR_URL ?? "/photos/event-mariupol.png",
     },
   });
@@ -246,7 +254,7 @@ async function main() {
       data: {
         eventId: firstEvent.id,
         userId: activist.id,
-        status: "GOING",
+        status: RSVPStatus.GOING,
       },
     });
   }

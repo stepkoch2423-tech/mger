@@ -1,21 +1,22 @@
 # MGER Board
 
-Доска мероприятий для "Молодой гвардии" на `Next.js 16`, `React 19`, `Prisma 7` и `SQLite`.
+Доска мероприятий для "Молодой гвардии" на `Next.js 16`, `React 19`, `Prisma 7` и `PostgreSQL`.
 
-Приложение показывает календарь мероприятий, карточки событий, роли участников штаба и отметки участия. Локально проект работает с seeded SQLite-базой, а публичный Vercel deployment сейчас переведён в режим просмотра, чтобы сайт стабильно открывался без внешней БД и файлового хранилища.
+Приложение показывает календарь мероприятий, карточки событий, роли участников штаба и отметки участия. Данные хранятся в PostgreSQL через Prisma driver adapter для `pg`, поэтому один и тот же runtime подходит для Vercel и обычного Node-сервера.
 
 ## Стек
 
 - `Next.js 16`
 - `React 19`
 - `Prisma 7`
-- `better-sqlite3`
+- `PostgreSQL`
 - `Tailwind CSS 4`
 
 ## Локальный запуск
 
 ```bash
 npm install
+vercel env pull .env.local
 npm run prisma:generate
 npm run setup
 npm run dev
@@ -37,13 +38,12 @@ npm run start
 
 ## Тестовые аккаунты
 
-- Владелец: `owner@mger.local` / `molodaya2026`
-- Модератор: `moderator@mger.local` / `moderator2026`
-- Активист: `aktivist@mger.local` / `aktivist2026`
+- Администратор: `admin@mger.local` / `mger-admin-2026`
+- Активист: `activist@mger.local` / `mger-activist-2026`
 
 ## Важные замечания
 
-- Основная локальная база находится в `dev.db`.
-- Файлы `dev.db-shm`, `dev.db-wal` и папка `output/` не должны попадать в git.
-- Для публичного Vercel deployment база автоматически подключается как traced asset, а mutating API-роуты отключены и возвращают режим read-only.
-- Чтобы включить полноценный вход, загрузки и редактирование в проде, нужно вынести данные и файлы во внешние managed-сервисы.
+- Для запуска нужен `DATABASE_URL` или совместимые переменные `POSTGRES_PRISMA_URL` / `POSTGRES_URL`.
+- `npm run setup` применяет схему через `prisma db push` и заново наполняет базу seed-данными.
+- На production-сервере используйте `npm run server:bootstrap` для применения схемы перед стартом.
+- Runtime-загрузки файлов на Vercel пока требуют отдельного файлового хранилища; база данных уже вынесена в PostgreSQL.
