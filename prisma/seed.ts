@@ -1,8 +1,11 @@
-import "dotenv/config";
+import { config } from "dotenv";
 import { addDays, set } from "date-fns";
 import { hash } from "bcryptjs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, Role, RSVPStatus } from "@prisma/client";
+
+config({ path: ".env.local" });
+config();
 
 const databaseUrl =
   process.env.DATABASE_URL ??
