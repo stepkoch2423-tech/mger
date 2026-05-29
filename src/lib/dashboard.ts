@@ -2,9 +2,9 @@ import { addMonths, endOfMonth, startOfMonth, subMonths } from "date-fns";
 import { cache } from "react";
 import { RSVPStatus, Role } from "@prisma/client";
 import type { SessionUser } from "@/lib/auth/session";
+import { dbQuery } from "@/lib/db";
 import { getDatabaseUrl } from "@/lib/deployment";
 import { canManageEvents } from "@/lib/permissions";
-import { prisma } from "@/lib/prisma";
 import { formatRussianPlural, toDateKey } from "@/lib/utils";
 
 export type BoardEvent = {
@@ -51,71 +51,87 @@ export type BoardPayload = {
   events: BoardEvent[];
 };
 
+type EventRow = {
+  id: string;
+  title: string;
+  summary: string;
+  description: string;
+  location: string;
+  category: string;
+  organizerName: string;
+  startAt: Date;
+  endAt: Date;
+  capacity: number | null;
+  createdByName: string;
+};
+
+type PhotoRow = {
+  id: string;
+  eventId: string;
+  url: string;
+  alt: string | null;
+};
+
+type ResponseRow = {
+  eventId: string;
+  status: RSVPStatus;
+  userId: string;
+  name: string;
+  email: string;
+  role: Role;
+};
+
 const getDashboardSnapshot = cache(async () => {
   const now = new Date();
 
   if (!getDatabaseUrl()) {
     return {
       now,
-      events: [],
-      users: [],
+      events: [] as EventRow[],
+      photos: [] as PhotoRow[],
+      responses: [] as ResponseRow[],
+      users: [] as Array<{ role: Role }>,
     };
   }
 
   const rangeStart = startOfMonth(subMonths(now, 1));
   const rangeEnd = endOfMonth(addMonths(now, 2));
 
-  const [events, users] = await Promise.all([
-    prisma.event.findMany({
-      where: {
-        startAt: {
-          gte: rangeStart,
-          lte: rangeEnd,
-        },
-      },
-      orderBy: {
-        startAt: "asc",
-      },
-      include: {
-        createdBy: {
-          select: {
-            name: true,
-          },
-        },
-        photos: {
-          orderBy: {
-            sortOrder: "asc",
-          },
-        },
-        responses: {
-          orderBy: {
-            createdAt: "asc",
-          },
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                role: true,
-              },
-            },
-          },
-        },
-      },
-    }),
-    prisma.user.findMany({
-      orderBy: [{ role: "asc" }, { createdAt: "asc" }],
-      select: {
-        role: true,
-      },
-    }),
-  ]);
+  const events = await dbQuery<EventRow>(
+    `select e.id, e.title, e.summary, e.description, e.location, e.category,
+            e."organizerName", e."startAt", e."endAt", e.capacity,
+            u.name as "createdByName"
+     from "Event" e
+     join "User" u on u.id = e."createdById"
+     where e."startAt" >= $1 and e."startAt" <= $2
+     order by e."startAt" asc`,
+    [rangeStart, rangeEnd],
+  );
+  const photos = await dbQuery<PhotoRow>(
+    `select p.id, p."eventId", p.url, p.alt
+     from "EventPhoto" p
+     join "Event" e on e.id = p."eventId"
+     where e."startAt" >= $1 and e."startAt" <= $2
+     order by p."eventId" asc, p."sortOrder" asc`,
+    [rangeStart, rangeEnd],
+  );
+  const responses = await dbQuery<ResponseRow>(
+    `select r."eventId", r.status::text as status, u.id as "userId", u.name, u.email, u.role::text as role
+     from "EventResponse" r
+     join "Event" e on e.id = r."eventId"
+     join "User" u on u.id = r."userId"
+     where e."startAt" >= $1 and e."startAt" <= $2
+     order by r."createdAt" asc`,
+    [rangeStart, rangeEnd],
+  );
+  const users = await dbQuery<{ role: Role }>(`select role::text as role from "User"`);
 
   return {
     now,
-    events,
-    users,
+    events: events.rows,
+    photos: photos.rows,
+    responses: responses.rows,
+    users: users.rows,
   };
 });
 
@@ -124,9 +140,23 @@ export async function getBoardPayload(viewer: SessionUser | null): Promise<Board
   const now = snapshot.now;
   const canSeeAttendees = canManageEvents(viewer?.role);
 
+  const photosByEvent = new Map<string, PhotoRow[]>();
+  for (const photo of snapshot.photos) {
+    photosByEvent.set(photo.eventId, [...(photosByEvent.get(photo.eventId) ?? []), photo]);
+  }
+
+  const responsesByEvent = new Map<string, ResponseRow[]>();
+  for (const response of snapshot.responses) {
+    responsesByEvent.set(response.eventId, [
+      ...(responsesByEvent.get(response.eventId) ?? []),
+      response,
+    ]);
+  }
+
   const events = snapshot.events.map<BoardEvent>((event) => {
-    const going = event.responses.filter((response) => response.status === RSVPStatus.GOING).length;
-    const declined = event.responses.filter(
+    const eventResponses = responsesByEvent.get(event.id) ?? [];
+    const going = eventResponses.filter((response) => response.status === RSVPStatus.GOING).length;
+    const declined = eventResponses.filter(
       (response) => response.status === RSVPStatus.DECLINED,
     ).length;
 
@@ -142,8 +172,8 @@ export async function getBoardPayload(viewer: SessionUser | null): Promise<Board
       endAt: event.endAt.toISOString(),
       dateKey: toDateKey(event.startAt),
       capacity: event.capacity,
-      createdByName: event.createdBy.name,
-      photos: event.photos.map((photo) => ({
+      createdByName: event.createdByName,
+      photos: (photosByEvent.get(event.id) ?? []).map((photo) => ({
         id: photo.id,
         url: photo.url,
         alt: photo.alt,
@@ -153,16 +183,16 @@ export async function getBoardPayload(viewer: SessionUser | null): Promise<Board
         declined,
       },
       attendees: canSeeAttendees
-        ? event.responses.map((response) => ({
-            id: response.user.id,
-            name: response.user.name,
-            email: response.user.email,
-            role: response.user.role,
+        ? eventResponses.map((response) => ({
+            id: response.userId,
+            name: response.name,
+            email: response.email,
+            role: response.role,
             status: response.status,
           }))
         : [],
       currentUserResponse:
-        event.responses.find((response) => response.userId === viewer?.id)?.status ?? null,
+        eventResponses.find((response) => response.userId === viewer?.id)?.status ?? null,
     };
   });
 

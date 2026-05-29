@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
+import { dbQuery } from "@/lib/db";
 import { READ_ONLY_DEPLOYMENT_MESSAGE, isReadOnlyDeployment } from "@/lib/deployment";
-import { prisma } from "@/lib/prisma";
 import { profileSchema } from "@/lib/validators";
 
 function nullableText(value: string) {
@@ -40,23 +40,26 @@ export async function PATCH(request: Request) {
       .filter(Boolean)
       .join(" ");
 
-    await prisma.user.update({
-      where: {
-        id: currentUser.id,
-      },
-      data: {
-        name: fullName || currentUser.name,
-        firstName: nullableText(parsed.data.firstName),
-        lastName: nullableText(parsed.data.lastName),
-        patronymic: nullableText(parsed.data.patronymic),
-        birthYear: parsed.data.birthYear ?? null,
-        education: nullableText(parsed.data.education),
-        headquarters: nullableText(parsed.data.headquarters),
-        about: nullableText(parsed.data.about),
-        achievements: nullableText(parsed.data.achievements),
-        avatarUrl: nullableText(parsed.data.avatarUrl),
-      },
-    });
+    await dbQuery(
+      `update "User"
+       set name = $1, "firstName" = $2, "lastName" = $3, patronymic = $4,
+           "birthYear" = $5, education = $6, headquarters = $7, about = $8,
+           achievements = $9, "avatarUrl" = $10, "updatedAt" = now()
+       where id = $11`,
+      [
+        fullName || currentUser.name,
+        nullableText(parsed.data.firstName),
+        nullableText(parsed.data.lastName),
+        nullableText(parsed.data.patronymic),
+        parsed.data.birthYear ?? null,
+        nullableText(parsed.data.education),
+        nullableText(parsed.data.headquarters),
+        nullableText(parsed.data.about),
+        nullableText(parsed.data.achievements),
+        nullableText(parsed.data.avatarUrl),
+        currentUser.id,
+      ],
+    );
 
     return NextResponse.json({ ok: true });
   } catch {

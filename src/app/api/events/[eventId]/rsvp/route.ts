@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
+import { dbQuery } from "@/lib/db";
 import { READ_ONLY_DEPLOYMENT_MESSAGE, isReadOnlyDeployment } from "@/lib/deployment";
-import { prisma } from "@/lib/prisma";
 import { rsvpSchema } from "@/lib/validators";
 
 type Context = {
@@ -34,22 +34,12 @@ export async function POST(request: Request, context: Context) {
 
     const { eventId } = await context.params;
 
-    await prisma.eventResponse.upsert({
-      where: {
-        eventId_userId: {
-          eventId,
-          userId: currentUser.id,
-        },
-      },
-      update: {
-        status: parsed.data.status,
-      },
-      create: {
-        eventId,
-        userId: currentUser.id,
-        status: parsed.data.status,
-      },
-    });
+    await dbQuery(
+      `insert into "EventResponse" (id, status, "eventId", "userId", "createdAt", "updatedAt")
+       values (concat('response_', md5($1 || $2)), $3::"RSVPStatus", $1, $2, now(), now())
+       on conflict ("eventId", "userId") do update set status = excluded.status, "updatedAt" = now()`,
+      [eventId, currentUser.id, parsed.data.status],
+    );
 
     return NextResponse.json({ ok: true });
   } catch {

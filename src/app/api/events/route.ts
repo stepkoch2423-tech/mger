@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
+import { dbQuery } from "@/lib/db";
 import { READ_ONLY_DEPLOYMENT_MESSAGE, isReadOnlyDeployment } from "@/lib/deployment";
 import { canManageEvents } from "@/lib/permissions";
-import { prisma } from "@/lib/prisma";
 import { eventSchema } from "@/lib/validators";
 
 export async function POST(request: Request) {
@@ -27,27 +27,38 @@ export async function POST(request: Request) {
       );
     }
 
-    const event = await prisma.event.create({
-      data: {
-        title: parsed.data.title,
-        summary: parsed.data.summary,
-        description: parsed.data.description,
-        location: parsed.data.location,
-        category: parsed.data.category,
-        organizerName: parsed.data.organizerName,
-        startAt: new Date(parsed.data.startAt),
-        endAt: new Date(parsed.data.endAt),
-        capacity: parsed.data.capacity ?? null,
-        createdById: currentUser.id,
-        photos: {
-          create: parsed.data.photoUrls.map((url, index) => ({
-            url,
-            alt: parsed.data.title,
-            sortOrder: index,
-          })),
-        },
-      },
-    });
+    const created = await dbQuery<{ id: string }>(
+      `insert into "Event" (
+         id, title, summary, description, location, category, "organizerName",
+         "startAt", "endAt", capacity, "createdById", "createdAt", "updatedAt"
+       )
+       values (
+         concat('event_', md5(random()::text || clock_timestamp()::text)),
+         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now(), now()
+       )
+       returning id`,
+      [
+        parsed.data.title,
+        parsed.data.summary,
+        parsed.data.description,
+        parsed.data.location,
+        parsed.data.category,
+        parsed.data.organizerName,
+        new Date(parsed.data.startAt),
+        new Date(parsed.data.endAt),
+        parsed.data.capacity ?? null,
+        currentUser.id,
+      ],
+    );
+    const event = created.rows[0];
+
+    for (const [index, url] of parsed.data.photoUrls.entries()) {
+      await dbQuery(
+        `insert into "EventPhoto" (id, url, alt, "sortOrder", "eventId")
+         values (concat('photo_', md5($1 || random()::text)), $1, $2, $3, $4)`,
+        [url, parsed.data.title, index, event.id],
+      );
+    }
 
     return NextResponse.json({ id: event.id });
   } catch {

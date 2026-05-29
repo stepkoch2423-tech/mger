@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { cache } from "react";
 import { Role } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
+import { dbQuery } from "@/lib/db";
 
 const SESSION_COOKIE_NAME = "mger-session";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 30;
@@ -38,13 +38,11 @@ export async function createSession(userId: string) {
   const token = randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + SESSION_MAX_AGE * 1000);
 
-  await prisma.session.create({
-    data: {
-      userId,
-      tokenHash: hashToken(token),
-      expiresAt,
-    },
-  });
+  await dbQuery(
+    `insert into "Session" (id, "tokenHash", "expiresAt", "userId", "createdAt")
+     values (concat('session_', md5($1)), $1, $2, $3, now())`,
+    [hashToken(token), expiresAt, userId],
+  );
 
   return { token, expiresAt };
 }
@@ -83,11 +81,7 @@ export async function revokeCurrentSession() {
     return;
   }
 
-  await prisma.session.deleteMany({
-    where: {
-      tokenHash: hashToken(token),
-    },
-  });
+  await dbQuery(`delete from "Session" where "tokenHash" = $1`, [hashToken(token)]);
 }
 
 export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
@@ -98,34 +92,57 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
     return null;
   }
 
-  const session = await prisma.session.findUnique({
-    where: {
-      tokenHash: hashToken(token),
-    },
-    include: {
-      user: true,
-    },
-  });
+  const result = await dbQuery<{
+    expiresAt: Date;
+    id: string;
+    name: string;
+    email: string;
+    role: Role;
+    avatarUrl: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    patronymic: string | null;
+    birthYear: number | null;
+    education: string | null;
+    about: string | null;
+    achievements: string | null;
+    headquarters: string | null;
+    isBlocked: boolean;
+    createdAt: Date;
+  }>(
+    `select
+       s."expiresAt",
+       u.id, u.name, u.email, u.role::text as role, u."avatarUrl", u."firstName",
+       u."lastName", u.patronymic, u."birthYear", u.education, u.about,
+       u.achievements, u.headquarters, u."isBlocked", u."createdAt"
+     from "Session" s
+     join "User" u on u.id = s."userId"
+     where s."tokenHash" = $1
+     limit 1`,
+    [hashToken(token)],
+  );
 
-  if (!session || session.expiresAt <= new Date() || session.user.isBlocked) {
+  const session = result.rows[0];
+
+  if (!session || session.expiresAt <= new Date() || session.isBlocked) {
     return null;
   }
 
   return {
-    id: session.user.id,
-    name: session.user.name,
-    email: session.user.email,
-    role: session.user.role,
-    avatarUrl: session.user.avatarUrl,
-    firstName: session.user.firstName,
-    lastName: session.user.lastName,
-    patronymic: session.user.patronymic,
-    birthYear: session.user.birthYear,
-    education: session.user.education,
-    about: session.user.about,
-    achievements: session.user.achievements,
-    headquarters: session.user.headquarters,
-    isBlocked: session.user.isBlocked,
-    createdAt: session.user.createdAt.toISOString(),
+    id: session.id,
+    name: session.name,
+    email: session.email,
+    role: session.role,
+    avatarUrl: session.avatarUrl,
+    firstName: session.firstName,
+    lastName: session.lastName,
+    patronymic: session.patronymic,
+    birthYear: session.birthYear,
+    education: session.education,
+    about: session.about,
+    achievements: session.achievements,
+    headquarters: session.headquarters,
+    isBlocked: session.isBlocked,
+    createdAt: session.createdAt.toISOString(),
   };
 });

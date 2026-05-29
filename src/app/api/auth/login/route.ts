@@ -1,8 +1,8 @@
 import { compare } from "bcryptjs";
 import { NextResponse } from "next/server";
 import { applySessionCookie, createSession } from "@/lib/auth/session";
+import { dbQuery } from "@/lib/db";
 import { READ_ONLY_DEPLOYMENT_MESSAGE, isReadOnlyDeployment } from "@/lib/deployment";
-import { prisma } from "@/lib/prisma";
 import { loginSchema } from "@/lib/validators";
 
 export async function POST(request: Request) {
@@ -21,11 +21,22 @@ export async function POST(request: Request) {
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: {
-        email: parsed.data.email.toLowerCase(),
-      },
-    });
+    const users = await dbQuery<{
+      id: string;
+      name: string;
+      email: string;
+      passwordHash: string;
+      role: string;
+      avatarUrl: string | null;
+      isBlocked: boolean;
+    }>(
+      `select id, name, email, "passwordHash", role::text as role, "avatarUrl", "isBlocked"
+       from "User"
+       where email = lower($1)
+       limit 1`,
+      [parsed.data.email],
+    );
+    const user = users.rows[0];
 
     if (!user) {
       return NextResponse.json({ error: "Пользователь не найден." }, { status: 404 });

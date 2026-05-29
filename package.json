@@ -10,6 +10,7 @@
     "lint": "eslint",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed-accounts": "tsx prisma/seed-accounts.ts",
     "db:deploy": "npm run db:push && npm run db:seed",
     "prisma:generate": "prisma generate",
     "setup": "npm run prisma:generate && npm run db:deploy",

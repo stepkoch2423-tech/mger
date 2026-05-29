@@ -1,0 +1,66 @@
+import { Role } from "@prisma/client";
+
+export const defaultAccountPassword = "Mger2026!";
+
+export const managedAccounts = [
+  {
+    name: "Кочетков Степан Дмитриевич",
+    email: "stepan.kochetkov@mger.local",
+    password: process.env.OWNER_PASSWORD ?? defaultAccountPassword,
+    role: Role.OWNER,
+    firstName: "Степан",
+    lastName: "Кочетков",
+    patronymic: "Дмитриевич",
+    birthYear: 2001,
+    education: "Администратор штаба МГЕР",
+    headquarters: "Центральный штаб",
+    about: "Администратор доски мероприятий и ответственный за доступ участников.",
+    achievements: "Настраивает рабочую доску штаба, роли участников и публикацию мероприятий.",
+    avatarUrl: "/photos/event-kazan.png",
+  },
+  {
+    name: "Анастасия Русанова",
+    email: "anastasia.rusanova@mger.local",
+    password: process.env.RUSANOVA_PASSWORD ?? defaultAccountPassword,
+    role: Role.ACTIVIST,
+    firstName: "Анастасия",
+    lastName: "Русанова",
+    avatarUrl: "/photos/event-kazan.png",
+  },
+  {
+    name: "Маша Лапина",
+    email: "masha.lapina@mger.local",
+    password: process.env.LAPINA_PASSWORD ?? defaultAccountPassword,
+    role: Role.ACTIVIST,
+    firstName: "Маша",
+    lastName: "Лапина",
+    avatarUrl: "/photos/event-tuapse.png",
+  },
+  {
+    name: "Анастасия Ярцева",
+    email: "anastasia.yartseva@mger.local",
+    password: process.env.YARTSEVA_PASSWORD ?? defaultAccountPassword,
+    role: Role.ACTIVIST,
+    firstName: "Анастасия",
+    lastName: "Ярцева",
+    avatarUrl: "/photos/event-mariupol.png",
+  },
+  {
+    name: "Антон Хайлов",
+    email: "anton.hailov@mger.local",
+    password: process.env.HAILOV_PASSWORD ?? defaultAccountPassword,
+    role: Role.ACTIVIST,
+    firstName: "Антон",
+    lastName: "Хайлов",
+    avatarUrl: "/photos/event-kazan.png",
+  },
+  {
+    name: "Алексей Папин",
+    email: "alexey.papin@mger.local",
+    password: process.env.PAPIN_PASSWORD ?? defaultAccountPassword,
+    role: Role.ACTIVIST,
+    firstName: "Алексей",
+    lastName: "Папин",
+    avatarUrl: "/photos/event-tuapse.png",
+  },
+] as const;

@@ -1,6 +1,6 @@
 import { Role } from "@prisma/client";
 import { cache } from "react";
-import { prisma } from "@/lib/prisma";
+import { dbQuery } from "@/lib/db";
 
 export type MemberProfile = {
   id: string;
@@ -23,34 +23,38 @@ export type MemberProfile = {
 };
 
 export const getMembersPayload = cache(async (): Promise<MemberProfile[]> => {
-  const users = await prisma.user.findMany({
-    orderBy: [{ role: "asc" }, { createdAt: "asc" }],
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      avatarUrl: true,
-      firstName: true,
-      lastName: true,
-      patronymic: true,
-      birthYear: true,
-      education: true,
-      about: true,
-      achievements: true,
-      headquarters: true,
-      isBlocked: true,
-      createdAt: true,
-      _count: {
-        select: {
-          responses: true,
-          createdEvents: true,
-        },
-      },
-    },
-  });
+  const users = await dbQuery<{
+    id: string;
+    name: string;
+    email: string;
+    role: Role;
+    avatarUrl: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    patronymic: string | null;
+    birthYear: number | null;
+    education: string | null;
+    about: string | null;
+    achievements: string | null;
+    headquarters: string | null;
+    isBlocked: boolean;
+    createdAt: Date;
+    responsesCount: string;
+    createdEventsCount: string;
+  }>(
+    `select u.id, u.name, u.email, u.role::text as role, u."avatarUrl", u."firstName",
+            u."lastName", u.patronymic, u."birthYear", u.education, u.about,
+            u.achievements, u.headquarters, u."isBlocked", u."createdAt",
+            count(distinct r.id) as "responsesCount",
+            count(distinct e.id) as "createdEventsCount"
+     from "User" u
+     left join "EventResponse" r on r."userId" = u.id
+     left join "Event" e on e."createdById" = u.id
+     group by u.id
+     order by u.role asc, u."createdAt" asc`,
+  );
 
-  return users.map((user) => ({
+  return users.rows.map((user) => ({
     id: user.id,
     name: user.name,
     email: user.email,
@@ -66,7 +70,7 @@ export const getMembersPayload = cache(async (): Promise<MemberProfile[]> => {
     headquarters: user.headquarters,
     isBlocked: user.isBlocked,
     createdAt: user.createdAt.toISOString(),
-    responsesCount: user._count.responses,
-    createdEventsCount: user._count.createdEvents,
+    responsesCount: Number(user.responsesCount),
+    createdEventsCount: Number(user.createdEventsCount),
   }));
 });

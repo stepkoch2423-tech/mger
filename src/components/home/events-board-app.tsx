@@ -417,6 +417,12 @@ export function EventsBoardApp({
   const spotlight = board.spotlight ?? board.events[0] ?? null;
   const selectedDateLabel = format(new Date(selectedDateKey), "d MMMM", { locale: ru });
   const visibleList = filteredEventDesk.slice(0, 8);
+  const upcomingEvents = board.events.filter((event) => new Date(event.endAt) >= new Date(board.now));
+  const nextDashboardEvents = upcomingEvents.slice(0, 3);
+  const currentUserResponses = currentUser
+    ? board.events.filter((event) => event.currentUserResponse === RSVP_STATUS.GOING).length
+    : 0;
+  const totalGoing = board.events.reduce((total, event) => total + event.attendeeStats.going, 0);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -540,6 +546,110 @@ export function EventsBoardApp({
           </aside>
 
           <div className="min-w-0 flex-1 space-y-4">
+            {currentUser ? (
+              <section className="panel-surface surface-panel overflow-hidden rounded-[2rem] p-4 sm:p-5 lg:p-6">
+                <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+                  <div className="rounded-[1.6rem] border border-white/8 bg-[radial-gradient(circle_at_top_left,rgba(234,35,52,0.22),transparent_34%),rgba(255,255,255,0.035)] p-4 sm:p-5">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[#8fa4cb]">
+                      Старт после входа
+                    </p>
+                    <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                      <div>
+                        <h1 className="font-display text-3xl uppercase leading-none text-white sm:text-4xl">
+                          Добро пожаловать, {currentUser.name.split(" ")[0]}
+                        </h1>
+                        <p className="mt-3 max-w-xl text-sm leading-6 text-[#9fb2d5]">
+                          Здесь видно, что скоро в календаре, где быстро создать мероприятие и как идет участие штаба.
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 sm:min-w-[360px]">
+                        <SurfaceBadge label="Ближайшие" value={`${upcomingEvents.length}`} />
+                        <SurfaceBadge label="Мои отметки" value={`${currentUserResponses}`} />
+                        <SurfaceBadge label="Участие" value={`${totalGoing}`} />
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                      {isModeratorView ? (
+                        <button
+                          type="button"
+                          onClick={() => openCreateForDate(selectedDateKey)}
+                          className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--mger-red)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#ff3245]"
+                        >
+                          <WandSparkles className="h-4 w-4" />
+                          Создать мероприятие
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={goToMembers}
+                        className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
+                      >
+                        <UsersRound className="h-4 w-4" />
+                        Участники
+                      </button>
+                      <button
+                        type="button"
+                        onClick={goToProfile}
+                        className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
+                      >
+                        <UserRoundPen className="h-4 w-4" />
+                        Мой профиль
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-[1.6rem] border border-white/8 bg-white/[0.025] p-4 sm:p-5">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[#8fa4cb]">
+                          Скоро
+                        </p>
+                        <h2 className="mt-1 text-xl font-semibold text-white">Ближайшие мероприятия</h2>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => scrollToSection(calendarRef.current)}
+                        className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 text-xs font-semibold text-[#d7e4ff] transition hover:bg-white/[0.1]"
+                      >
+                        К календарю
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+
+                    <div className="mt-4 grid gap-2">
+                      {nextDashboardEvents.length ? (
+                        nextDashboardEvents.map((event) => (
+                          <button
+                            key={event.id}
+                            type="button"
+                            onClick={() => jumpToEvent(event)}
+                            className="group rounded-[1.1rem] border border-white/8 bg-white/[0.035] p-3 text-left transition hover:border-white/16 hover:bg-white/[0.07]"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold text-white">{event.title}</p>
+                                <p className="mt-1 text-xs text-[#91a5cb]">
+                                  {format(new Date(event.startAt), "d MMMM, HH:mm", { locale: ru })} · {event.location}
+                                </p>
+                              </div>
+                              <span className="rounded-full bg-[#214aa8]/22 px-2.5 py-1 text-xs font-semibold text-[#cfe0ff]">
+                                {event.attendeeStats.going}
+                              </span>
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="rounded-[1.1rem] border border-dashed border-white/10 px-4 py-6 text-sm text-[#93a7cb]">
+                          Пока нет ближайших мероприятий. Создайте первое событие для штаба.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </section>
+            ) : null}
+
             <section
               ref={heroRef}
               className="panel-surface surface-panel overflow-hidden rounded-[2rem]"
@@ -1295,6 +1405,7 @@ function EventEditorDialog({
   const [error, setError] = useState<string | null>(null);
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [formState, setFormState] = useState(() => getInitialEditorState(state.dateKey, state.event));
+  const [editorStep, setEditorStep] = useState<"basic" | "details">("basic");
   const pending = pendingAction !== null;
 
   async function uploadPhotos(files: File[]) {
@@ -1425,8 +1536,35 @@ function EventEditorDialog({
       size="md"
       title={state.mode === "create" ? "Новое мероприятие" : "Редактирование мероприятия"}
     >
+      <div className="mb-4 grid grid-cols-2 gap-2 lg:hidden">
+        <button
+          type="button"
+          onClick={() => setEditorStep("basic")}
+          className={cn(
+            "rounded-full px-4 py-2.5 text-sm font-semibold transition",
+            editorStep === "basic"
+              ? "bg-white text-[#15306f]"
+              : "border border-white/10 bg-white/[0.04] text-[#a9bcdf]",
+          )}
+        >
+          1. Главное
+        </button>
+        <button
+          type="button"
+          onClick={() => setEditorStep("details")}
+          className={cn(
+            "rounded-full px-4 py-2.5 text-sm font-semibold transition",
+            editorStep === "details"
+              ? "bg-white text-[#15306f]"
+              : "border border-white/10 bg-white/[0.04] text-[#a9bcdf]",
+          )}
+        >
+          2. Детали и фото
+        </button>
+      </div>
+
       <form className="grid gap-3 lg:grid-cols-2" onSubmit={handleSubmit}>
-        <div className="lg:col-span-2">
+        <div className={cn("lg:col-span-2", editorStep !== "basic" && "hidden lg:block")}>
           <label htmlFor="event-title" className={labelClass}>
             Название
           </label>
@@ -1439,7 +1577,7 @@ function EventEditorDialog({
           />
         </div>
 
-        <div>
+        <div className={cn(editorStep !== "details" && "hidden lg:block")}>
           <label htmlFor="event-category" className={labelClass}>
             Категория
           </label>
@@ -1454,7 +1592,7 @@ function EventEditorDialog({
           />
         </div>
 
-        <div>
+        <div className={cn(editorStep !== "basic" && "hidden lg:block")}>
           <label htmlFor="event-location" className={labelClass}>
             Место
           </label>
@@ -1469,7 +1607,7 @@ function EventEditorDialog({
           />
         </div>
 
-        <div>
+        <div className={cn(editorStep !== "details" && "hidden lg:block")}>
           <label htmlFor="event-organizer" className={labelClass}>
             Организатор
           </label>
@@ -1484,7 +1622,7 @@ function EventEditorDialog({
           />
         </div>
 
-        <div>
+        <div className={cn(editorStep !== "details" && "hidden lg:block")}>
           <label htmlFor="event-capacity" className={labelClass}>
             Лимит мест
           </label>
@@ -1506,7 +1644,7 @@ function EventEditorDialog({
           />
         </div>
 
-        <div>
+        <div className={cn(editorStep !== "basic" && "hidden lg:block")}>
           <label htmlFor="event-date" className={labelClass}>
             Дата
           </label>
@@ -1519,7 +1657,7 @@ function EventEditorDialog({
           />
         </div>
 
-        <div>
+        <div className={cn(editorStep !== "basic" && "hidden lg:block")}>
           <label htmlFor="event-start" className={labelClass}>
             Начало
           </label>
@@ -1534,7 +1672,7 @@ function EventEditorDialog({
           />
         </div>
 
-        <div>
+        <div className={cn(editorStep !== "basic" && "hidden lg:block")}>
           <label htmlFor="event-end" className={labelClass}>
             Окончание
           </label>
@@ -1549,7 +1687,7 @@ function EventEditorDialog({
           />
         </div>
 
-        <div className="lg:col-span-2">
+        <div className={cn("lg:col-span-2", editorStep !== "details" && "hidden lg:block")}>
           <label htmlFor="event-summary" className={labelClass}>
             Краткое описание
           </label>
@@ -1562,7 +1700,7 @@ function EventEditorDialog({
           />
         </div>
 
-        <div className="lg:col-span-2">
+        <div className={cn("lg:col-span-2", editorStep !== "details" && "hidden lg:block")}>
           <label htmlFor="event-description" className={labelClass}>
             Полное описание
           </label>
@@ -1577,7 +1715,7 @@ function EventEditorDialog({
           />
         </div>
 
-        <div className="lg:col-span-2">
+        <div className={cn("lg:col-span-2", editorStep !== "details" && "hidden lg:block")}>
           <label htmlFor="event-files" className={labelClass}>
             Новые фотографии
           </label>
@@ -1593,7 +1731,7 @@ function EventEditorDialog({
         </div>
 
         {formState.photoUrls.length ? (
-          <div className="lg:col-span-2">
+          <div className={cn("lg:col-span-2", editorStep !== "details" && "hidden lg:block")}>
             <p className={labelClass}>Текущие фотографии</p>
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {formState.photoUrls.map((url) => (
@@ -1632,7 +1770,7 @@ function EventEditorDialog({
         ) : null}
 
         {newFiles.length ? (
-          <p className="lg:col-span-2 text-sm text-[#93a7cb]">
+          <p className={cn("lg:col-span-2 text-sm text-[#93a7cb]", editorStep !== "details" && "hidden lg:block")}>
             Будут загружены: {newFiles.map((file) => file.name).join(", ")}
           </p>
         ) : null}
@@ -1665,9 +1803,22 @@ function EventEditorDialog({
             ) : null}
           </div>
           <button
+            type="button"
+            onClick={() => setEditorStep("details")}
+            className={cn(
+              "rounded-full bg-[#214aa8] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#2d58bf] lg:hidden",
+              editorStep === "details" && "hidden",
+            )}
+          >
+            Далее: детали и фото
+          </button>
+          <button
             type="submit"
             disabled={pending}
-            className="rounded-full bg-[#214aa8] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#2d58bf] disabled:cursor-wait disabled:opacity-70"
+            className={cn(
+              "rounded-full bg-[#214aa8] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#2d58bf] disabled:cursor-wait disabled:opacity-70",
+              editorStep !== "details" && "hidden lg:inline-flex",
+            )}
           >
             {pendingAction === "save" ? (
               <InlineLoader label={state.mode === "create" ? "Создаём" : "Сохраняем"} />

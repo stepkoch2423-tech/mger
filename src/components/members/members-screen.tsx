@@ -33,6 +33,10 @@ type MemberAction =
       isBlocked: boolean;
     };
 
+type RoleFilter = "all" | typeof ROLE.OWNER | typeof ROLE.MODERATOR | typeof ROLE.ACTIVIST;
+type StatusFilter = "all" | "active" | "blocked";
+type ActivityFilter = "all" | "withResponses" | "createsEvents";
+
 function getActionCopy(action: MemberAction) {
   if (action.type === "role") {
     return action.nextRole === ROLE.MODERATOR
@@ -70,6 +74,9 @@ export function MembersScreen({
 }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [activityFilter, setActivityFilter] = useState<ActivityFilter>("all");
   const [action, setAction] = useState<MemberAction | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
@@ -79,12 +86,32 @@ export function MembersScreen({
   const visibleMembers = useMemo(() => {
     const normalized = deferredQuery.trim().toLowerCase();
 
-    if (!normalized) {
-      return members;
-    }
+    return members.filter((member) => {
+      if (roleFilter !== "all" && member.role !== roleFilter) {
+        return false;
+      }
 
-    return members.filter((member) =>
-      [
+      if (statusFilter === "active" && member.isBlocked) {
+        return false;
+      }
+
+      if (statusFilter === "blocked" && !member.isBlocked) {
+        return false;
+      }
+
+      if (activityFilter === "withResponses" && member.responsesCount === 0) {
+        return false;
+      }
+
+      if (activityFilter === "createsEvents" && member.createdEventsCount === 0) {
+        return false;
+      }
+
+      if (!normalized) {
+        return true;
+      }
+
+      return [
         member.name,
         member.email,
         roleLabel[member.role],
@@ -95,9 +122,9 @@ export function MembersScreen({
         .filter(Boolean)
         .join(" ")
         .toLowerCase()
-        .includes(normalized),
-    );
-  }, [deferredQuery, members]);
+        .includes(normalized);
+    });
+  }, [activityFilter, deferredQuery, members, roleFilter, statusFilter]);
 
   function confirmAction(nextAction: MemberAction) {
     setMessage(null);
@@ -185,6 +212,40 @@ export function MembersScreen({
                 На доску
               </Link>
             </div>
+          </div>
+
+          <div className="mt-4 grid gap-2 border-b border-white/8 pb-4 md:grid-cols-3">
+            <FilterSelect
+              label="Роль"
+              value={roleFilter}
+              onChange={(value) => setRoleFilter(value as RoleFilter)}
+              options={[
+                { value: "all", label: "Все роли" },
+                { value: ROLE.OWNER, label: "Администраторы" },
+                { value: ROLE.MODERATOR, label: "Модераторы" },
+                { value: ROLE.ACTIVIST, label: "Активисты" },
+              ]}
+            />
+            <FilterSelect
+              label="Статус"
+              value={statusFilter}
+              onChange={(value) => setStatusFilter(value as StatusFilter)}
+              options={[
+                { value: "all", label: "Любой статус" },
+                { value: "active", label: "Активные" },
+                { value: "blocked", label: "Заблокированные" },
+              ]}
+            />
+            <FilterSelect
+              label="Посещаемость"
+              value={activityFilter}
+              onChange={(value) => setActivityFilter(value as ActivityFilter)}
+              options={[
+                { value: "all", label: "Любая активность" },
+                { value: "withResponses", label: "Есть отметки" },
+                { value: "createsEvents", label: "Создавали события" },
+              ]}
+            />
           </div>
 
           {message ? (
@@ -344,5 +405,36 @@ function Info({ label, value }: { label: string; value: string }) {
       </p>
       <p className="mt-1 line-clamp-2 text-sm font-semibold text-white">{value}</p>
     </div>
+  );
+}
+
+function FilterSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<{ value: string; label: string }>;
+}) {
+  return (
+    <label className="surface-chip flex flex-col gap-1 rounded-[1rem] px-3 py-2 text-sm text-[#9db2d8]">
+      <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7f93b7]">
+        {label}
+      </span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="bg-transparent text-sm font-semibold text-white outline-none [&>option]:bg-[#0d1728]"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }

@@ -1,9 +1,9 @@
 import { Role } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
+import { dbQuery } from "@/lib/db";
 import { READ_ONLY_DEPLOYMENT_MESSAGE, isReadOnlyDeployment } from "@/lib/deployment";
 import { canManageMembers } from "@/lib/permissions";
-import { prisma } from "@/lib/prisma";
 import { userStatusSchema } from "@/lib/validators";
 
 type Context = {
@@ -46,38 +46,29 @@ export async function PATCH(request: Request, context: Context) {
       );
     }
 
-    const target = await prisma.user.findUnique({
-      where: {
-        id: userId,
-      },
-    });
+    const target = await dbQuery<{ role: Role }>(
+      `select role::text as role from "User" where id = $1 limit 1`,
+      [userId],
+    );
 
-    if (!target) {
+    if (!target.rows[0]) {
       return NextResponse.json({ error: "Пользователь не найден." }, { status: 404 });
     }
 
-    if (target.role === Role.OWNER) {
+    if (target.rows[0].role === Role.OWNER) {
       return NextResponse.json(
         { error: "Профиль владельца нельзя блокировать." },
         { status: 400 },
       );
     }
 
-    await prisma.user.update({
-      where: {
-        id: userId,
-      },
-      data: {
-        isBlocked: parsed.data.isBlocked,
-      },
-    });
+    await dbQuery(`update "User" set "isBlocked" = $1, "updatedAt" = now() where id = $2`, [
+      parsed.data.isBlocked,
+      userId,
+    ]);
 
     if (parsed.data.isBlocked) {
-      await prisma.session.deleteMany({
-        where: {
-          userId,
-        },
-      });
+      await dbQuery(`delete from "Session" where "userId" = $1`, [userId]);
     }
 
     return NextResponse.json({ ok: true });

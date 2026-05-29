@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
+import { dbQuery } from "@/lib/db";
 import { READ_ONLY_DEPLOYMENT_MESSAGE, isReadOnlyDeployment } from "@/lib/deployment";
 import { canManageEvents } from "@/lib/permissions";
-import { prisma } from "@/lib/prisma";
 import { eventSchema } from "@/lib/validators";
 
 type Context = {
@@ -34,30 +34,34 @@ export async function PATCH(request: Request, context: Context) {
       );
     }
 
-    await prisma.event.update({
-      where: {
-        id: eventId,
-      },
-      data: {
-        title: parsed.data.title,
-        summary: parsed.data.summary,
-        description: parsed.data.description,
-        location: parsed.data.location,
-        category: parsed.data.category,
-        organizerName: parsed.data.organizerName,
-        startAt: new Date(parsed.data.startAt),
-        endAt: new Date(parsed.data.endAt),
-        capacity: parsed.data.capacity ?? null,
-        photos: {
-          deleteMany: {},
-          create: parsed.data.photoUrls.map((url, index) => ({
-            url,
-            alt: parsed.data.title,
-            sortOrder: index,
-          })),
-        },
-      },
-    });
+    await dbQuery(
+      `update "Event"
+       set title = $1, summary = $2, description = $3, location = $4,
+           category = $5, "organizerName" = $6, "startAt" = $7, "endAt" = $8,
+           capacity = $9, "updatedAt" = now()
+       where id = $10`,
+      [
+        parsed.data.title,
+        parsed.data.summary,
+        parsed.data.description,
+        parsed.data.location,
+        parsed.data.category,
+        parsed.data.organizerName,
+        new Date(parsed.data.startAt),
+        new Date(parsed.data.endAt),
+        parsed.data.capacity ?? null,
+        eventId,
+      ],
+    );
+    await dbQuery(`delete from "EventPhoto" where "eventId" = $1`, [eventId]);
+
+    for (const [index, url] of parsed.data.photoUrls.entries()) {
+      await dbQuery(
+        `insert into "EventPhoto" (id, url, alt, "sortOrder", "eventId")
+         values (concat('photo_', md5($1 || random()::text)), $1, $2, $3, $4)`,
+        [url, parsed.data.title, index, eventId],
+      );
+    }
 
     return NextResponse.json({ ok: true });
   } catch {
@@ -82,11 +86,7 @@ export async function DELETE(_request: Request, context: Context) {
   try {
     const { eventId } = await context.params;
 
-    await prisma.event.delete({
-      where: {
-        id: eventId,
-      },
-    });
+    await dbQuery(`delete from "Event" where id = $1`, [eventId]);
 
     return NextResponse.json({ ok: true });
   } catch {

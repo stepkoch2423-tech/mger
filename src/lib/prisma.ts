@@ -17,7 +17,11 @@ function requireDatabaseUrl() {
 }
 
 function createPrismaClient() {
-  const adapter = new PrismaPg(requireDatabaseUrl());
+  const adapter = new PrismaPg({
+    connectionString: requireDatabaseUrl(),
+    connectionTimeoutMillis: 10_000,
+    query_timeout: 20_000,
+  });
 
   return new PrismaClient({
     adapter,
